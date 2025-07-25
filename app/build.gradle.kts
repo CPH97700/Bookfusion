@@ -1,3 +1,28 @@
+import org.jetbrains.kotlin.konan.properties.Properties
+import java.io.FileInputStream
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile))
+}
+val apiKey = localProperties.getProperty("GOOGLE_BOOKS_API_KEY") ?: ""
+
+android {
+    buildTypes {
+        debug {
+            buildConfigField("String", "GOOGLE_BOOKS_API_KEY", "\"$apiKey\"")
+        }
+        release {
+            buildConfigField("String", "GOOGLE_BOOKS_API_KEY", "\"$apiKey\"")
+        }
+    }
+    buildFeatures {
+        buildConfig = true
+    }
+}
+
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -50,16 +75,18 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    // 📲 Jetpack Navigation
     implementation("androidx.navigation:navigation-compose:2.7.5")
-    // 🔥 Firebase Auth
     implementation(platform("com.google.firebase:firebase-bom:32.2.2"))
     implementation("com.google.firebase:firebase-auth-ktx")
-    // 📦 Firestore (für später optional)
     implementation("com.google.firebase:firebase-firestore-ktx")
-    // 🌈 Für Icons & Animation
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.animation:animation")
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
+    implementation(libs.moshi)
+    implementation(libs.retrofit)
+    implementation(libs.converterMoshi)
+    implementation(libs.coil.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

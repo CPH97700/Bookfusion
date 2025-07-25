@@ -130,7 +130,6 @@ fun SignupScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // 🔁 Passwort wiederholen
                     OutlinedTextField(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it },
@@ -140,7 +139,7 @@ fun SignupScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // ❌ Fehlertext
+
                     if (errorText.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(

@@ -1,15 +1,15 @@
 package com.example.bookfusion.navigation
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.bookfusion.screens.LoginScreen
 import com.example.bookfusion.screens.SignupScreen
-import com.example.bookfusion.ui.screens.HomeScreen
+import com.example.bookfusion.ui.HomeScreen
 import com.example.bookfusion.ui.screens.StartScreen
 import com.example.bookfusion.viewmodel.AuthViewModel
 
