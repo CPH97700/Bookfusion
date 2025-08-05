@@ -159,6 +159,7 @@ fun HomeScreen(
                             scope.launch {
                                 delay(1500)
                                 triggerConfetti = false
+
                             }
                         },
                         modifier = Modifier
