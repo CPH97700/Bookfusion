@@ -11,9 +11,9 @@ import com.example.bookfusion.screens.LoginScreen
 import com.example.bookfusion.screens.SignupScreen
 import com.example.bookfusion.ui.HomeScreen
 import com.example.bookfusion.ui.screens.StartScreen
+import com.example.bookfusion.ui.screens.MainScreen
 import com.example.bookfusion.viewmodel.AuthViewModel
 
-// 🧭 Navigation mit StartScreen → Login → Signup → Home
 
 @Composable
 fun AppNavigation(viewModel: AuthViewModel) {
@@ -25,12 +25,12 @@ fun AppNavigation(viewModel: AuthViewModel) {
         composable("login") { LoginScreen(navController, viewModel) }
         composable("signup") { SignupScreen(navController, viewModel) }
         composable("home") { HomeScreen(navController, viewModel) }
+        composable("main") { MainScreen() }
     }
 
-    // 🔁 automatische Weiterleitung wenn eingeloggt
     LaunchedEffect(currentUser) {
         if (currentUser != null) {
-            navController.navigate("home") {
+            navController.navigate("main") {
                 popUpTo("login") { inclusive = true }
             }
         }

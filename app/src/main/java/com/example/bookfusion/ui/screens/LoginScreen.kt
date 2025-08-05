@@ -1,4 +1,3 @@
-// ✨ LoginScreen.kt – moderner LoginScreen mit Verlauf & Firebase-Anbindung
 
 package com.example.bookfusion.screens
 
@@ -38,12 +37,10 @@ fun LoginScreen(
     navController: NavController,
     viewModel: AuthViewModel
 ) {
-    // 📩 States für Eingabefelder
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
 
-    // 🎨 Hintergrund mit Verlauf
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -63,7 +60,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(60.dp))
 
-            // 👋 Begrüßungstitel
             Text(
                 buildAnnotatedString {
                     withStyle(style = SpanStyle(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = Color(0xFF6A4EA6))) {
@@ -77,7 +73,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 🧾 Login-Karte mit Eingabefeldern
             Card(
                 modifier = Modifier.fillMaxSize(),
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
@@ -89,7 +84,6 @@ fun LoginScreen(
                         .padding(24.dp)
                         .fillMaxWidth()
                 ) {
-                    // ➖ dekorative Linie
                     Box(
                         modifier = Modifier
                             .width(40.dp)
@@ -103,7 +97,6 @@ fun LoginScreen(
                     Text("Login", fontSize = 20.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.align(Alignment.CenterHorizontally))
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // 📧 E-Mail Feld
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
@@ -114,7 +107,6 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // 🔑 Passwortfeld mit Toggle
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -133,7 +125,6 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // 🔘 Login-Button mit Gradient
                     Button(
                         onClick = {
                             viewModel.login(email, password) { success ->
@@ -163,7 +154,6 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // 🔄 Link zu Registrierung
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center

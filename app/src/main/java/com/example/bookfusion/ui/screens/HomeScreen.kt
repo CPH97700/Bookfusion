@@ -1,10 +1,14 @@
 package com.example.bookfusion.ui
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,15 +19,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Close
 import androidx.navigation.NavController
-import com.example.bookfusion.viewmodel.AuthViewModel
-import android.util.Log
+import coil.compose.AsyncImage
 import com.example.bookapp.viewmodel.BookViewModel
 import com.example.bookapp.viewmodel.DataState
+import com.example.bookfusion.ui.components.SwipeableCard
+import com.example.bookfusion.viewmodel.AuthViewModel
+import com.example.bookfusion.ui.animations.ConfettiEffect
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
@@ -33,6 +37,10 @@ fun HomeScreen(
 ) {
     val book by bookViewModel.bookState.collectAsState()
     val uiState by bookViewModel.uiState.collectAsState()
+
+    var started by remember { mutableStateOf(false) }
+    var triggerConfetti by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     val backgroundColor = Color(0xFFEEDBE9)
     val buttonColor = Color.White
@@ -54,88 +62,132 @@ fun HomeScreen(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 🔖 Überschrift
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp),
-                colors = CardDefaults.cardColors(containerColor = backgroundColor),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
+            if (!started) {
+                Text(
+                    "Bereit für dein Buch-Schicksal?",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = iconColor
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(
+                    onClick = {
+                        started = true
+                        bookViewModel.loadRandomBook()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = iconColor),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .height(60.dp)
+                        .width(240.dp)
+                ) {
+                    Text("🎁 Starte dein Blind-Date", color = Color.White)
+                }
+            } else {
                 Column(
-                    Modifier
-                        .padding(top = 32.dp, bottom = 16.dp)
-                        .fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 32.dp, bottom = 24.dp)
                 ) {
                     Text(
-                        "Blind-Date with a Book",
-                        style = MaterialTheme.typography.headlineMedium,
+                        text = "Blind-Date with a Book",
+                        style = MaterialTheme.typography.headlineLarge,
                         color = iconColor
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        "Swipe für dein Buch um den richtigen zu finden",
+                        text = "Swipe für dein Buch, um den richtigen zu finden",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray
                     )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(70.dp))
 
-            // 📖 Buch anzeigen
-            when (uiState) {
-                DataState.LOADING -> CircularProgressIndicator()
-                DataState.ERROR -> Text("Fehler beim Laden", color = Color.Red)
-                DataState.READY -> book?.let {
-                    val imageUrl = it.volumeInfo.imageLinks?.thumbnail?.replace("http://", "https://")
-                    Log.d("ImageURL", "📷 $imageUrl")
+                when (uiState) {
+                    DataState.LOADING -> CircularProgressIndicator()
+                    DataState.ERROR -> Text("Fehler beim Laden", color = Color.Red)
+                    DataState.READY -> book?.let {
+                        val imageUrl =
+                            it.volumeInfo.imageLinks?.thumbnail?.replace("http://", "https://")
+                        Log.d("ImageURL", "📷 $imageUrl")
 
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = it.volumeInfo.title,
+                        Box(
+                            modifier = Modifier
+                                .height(480.dp)
+                                .width(280.dp)
+                        ) {
+                            SwipeableCard(
+                                onSwiped = { bookViewModel.loadRandomBook() },
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    AsyncImage(
+                                        model = imageUrl,
+                                        contentDescription = it.volumeInfo.title,
+                                        modifier = Modifier
+                                            .height(400.dp)
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .shadow(10.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Text(
+                                        text = it.volumeInfo.title,
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        color = iconColor,
+                                        modifier = Modifier.padding(horizontal = 8.dp),
+                                        maxLines = 2
+                                    )
+                                }
+                            }
+
+                            ConfettiEffect(show = triggerConfetti)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = {
+                            triggerConfetti = true
+                            bookViewModel.loadRandomBook()
+                            scope.launch {
+                                delay(1500)
+                                triggerConfetti = false
+                            }
+                        },
                         modifier = Modifier
-                            .height(300.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .shadow(8.dp)
-                    )
-                }
-            }
+                            .size(80.dp)
+                            .background(buttonColor, shape = CircleShape)
+                            .border(2.dp, Color.DarkGray, CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Dislike",
+                            tint = iconColor,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
 
-            Spacer(modifier = Modifier.height(40.dp))
-
-            // ❤️ / ❌ Buttons
-            Row(
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                IconButton(
-                    onClick = { bookViewModel.loadRandomBook() },
-                    modifier = Modifier
-                        .size(64.dp)
-                        .background(buttonColor, shape = CircleShape)
-                        .border(2.dp, Color.DarkGray, CircleShape)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Dislike",
-                        tint = iconColor,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-
-                IconButton(
-                    onClick = { /* TODO: Like speichern */ },
-                    modifier = Modifier
-                        .size(64.dp)
-                        .background(buttonColor, shape = CircleShape)
-                        .border(2.dp, iconColor, CircleShape)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Favorite,
-                        contentDescription = "Like",
-                        tint = iconColor,
-                        modifier = Modifier.size(32.dp)
-                    )
+                    IconButton(
+                        onClick = { /* TODO: Like speichern */ },
+                        modifier = Modifier
+                            .size(80.dp)
+                            .background(buttonColor, shape = CircleShape)
+                            .border(2.dp, iconColor, CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = "Like",
+                            tint = iconColor,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
                 }
             }
         }

@@ -82,6 +82,11 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.animation:animation")
     implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("androidx.compose.ui:ui:1.5.4")
+    implementation("androidx.compose.animation:animation:1.5.4")
+    implementation("androidx.compose.foundation:foundation:1.5.4")
+
+
 
     implementation(libs.moshi)
     implementation(libs.retrofit)
