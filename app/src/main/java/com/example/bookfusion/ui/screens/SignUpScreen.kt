@@ -26,7 +26,6 @@ fun SignupScreen(
     navController: NavController,
     viewModel: AuthViewModel
 ) {
-    // 🧠 States für Eingaben
     var profileName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -34,7 +33,6 @@ fun SignupScreen(
     var showPassword by remember { mutableStateOf(false) }
     var errorText by remember { mutableStateOf("") }
 
-    // 🎨 Hintergrundverlauf
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -54,7 +52,6 @@ fun SignupScreen(
 
             Spacer(modifier = Modifier.height(60.dp))
 
-            // 📣 Überschrift
             Text(
                 text = "Sign up. Lege ein Konto an",
                 fontSize = 26.sp,
@@ -64,7 +61,6 @@ fun SignupScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 🧾 Anmeldekarte
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
@@ -76,7 +72,6 @@ fun SignupScreen(
                         .padding(24.dp)
                         .fillMaxWidth()
                 ) {
-                    // ➖ Linie oben
                     Box(
                         modifier = Modifier
                             .width(40.dp)
@@ -87,7 +82,6 @@ fun SignupScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // 🙍‍♀️ Profilname
                     OutlinedTextField(
                         value = profileName,
                         onValueChange = { profileName = it },
@@ -98,7 +92,7 @@ fun SignupScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // 📧 E-Mail
+
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
@@ -109,7 +103,6 @@ fun SignupScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // 🔑 Passwort
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -151,7 +144,6 @@ fun SignupScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // 🟣 Sign-Up Button
                     Button(
                         onClick = {
                             if (email.isNotBlank() && password == confirmPassword) {

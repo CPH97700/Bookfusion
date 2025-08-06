@@ -30,13 +30,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 
-// 🚀 StartScreen.kt – Einstieg mit Wischanimation nach oben
 
 @Composable
 fun StartScreen(navController: NavController) {
     var offsetY by remember { mutableStateOf(0f) }
 
-    // 🎨 Hintergrund mit Icons
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -52,7 +50,6 @@ fun StartScreen(navController: NavController) {
                 }
             }
     ) {
-        // 📚 Text + Animation
         Column(
             modifier = Modifier
                 .fillMaxSize()

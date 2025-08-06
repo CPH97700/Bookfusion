@@ -1,5 +1,7 @@
 package com.example.bookapp.viewmodel
 
+import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bookapp.model.BookItem
@@ -13,6 +15,9 @@ enum class DataState {
 }
 
 class BookViewModel : ViewModel() {
+    init {
+        Log.d("BookViewModel", "📘 ViewModel erstellt")
+    }
 
     private val repository = BookRepositoryImpl()
 
@@ -21,6 +26,26 @@ class BookViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(DataState.READY)
     val uiState: StateFlow<DataState> = _uiState
+
+    private val _likedBooks = mutableStateListOf<BookItem>()
+    val likedBooks: List<BookItem> = _likedBooks
+
+    private val _readBooks = mutableStateListOf<BookItem>()
+    val readBooks: List<BookItem> = _readBooks
+
+    fun likeBook(book: BookItem) {
+        Log.d("BookViewModel", "❤️ Buch geliked: ${book.volumeInfo.title}")
+        if (!_likedBooks.any { it.id == book.id }) {
+            _likedBooks.add(book)
+        }
+        markAsRead(book)
+    }
+
+    fun markAsRead(book: BookItem) {
+        if (!_readBooks.any { it.id == book.id }) {
+            _readBooks.add(book)
+        }
+    }
 
     fun loadRandomBook() {
         viewModelScope.launch {

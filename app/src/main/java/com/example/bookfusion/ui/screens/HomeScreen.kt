@@ -23,9 +23,9 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.bookapp.viewmodel.BookViewModel
 import com.example.bookapp.viewmodel.DataState
+import com.example.bookfusion.ui.animations.ConfettiEffect
 import com.example.bookfusion.ui.components.SwipeableCard
 import com.example.bookfusion.viewmodel.AuthViewModel
-import com.example.bookfusion.ui.animations.ConfettiEffect
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -42,9 +42,8 @@ fun HomeScreen(
     var triggerConfetti by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    val backgroundColor = Color(0xFFEEDBE9)
-    val buttonColor = Color.White
     val iconColor = Color(0xFF2A1A5E)
+    val buttonColor = Color.White
 
     Box(
         modifier = Modifier
@@ -55,6 +54,9 @@ fun HomeScreen(
                 )
             )
     ) {
+        // 🎉 Konfetti oben auf dem Screen (über Buch!)
+        ConfettiEffect(show = triggerConfetti)
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -89,17 +91,9 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .padding(top = 32.dp, bottom = 24.dp)
                 ) {
-                    Text(
-                        text = "Blind-Date with a Book",
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = iconColor
-                    )
+                    Text("Blind-Date with a Book", style = MaterialTheme.typography.headlineLarge, color = iconColor)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Swipe für dein Buch, um den richtigen zu finden",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray
-                    )
+                    Text("Swipe für dein Buch, um den richtigen zu finden", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                 }
 
                 Spacer(modifier = Modifier.height(70.dp))
@@ -108,9 +102,7 @@ fun HomeScreen(
                     DataState.LOADING -> CircularProgressIndicator()
                     DataState.ERROR -> Text("Fehler beim Laden", color = Color.Red)
                     DataState.READY -> book?.let {
-                        val imageUrl =
-                            it.volumeInfo.imageLinks?.thumbnail?.replace("http://", "https://")
-                        Log.d("ImageURL", "📷 $imageUrl")
+                        val imageUrl = it.volumeInfo.imageLinks?.thumbnail?.replace("http://", "https://")
 
                         Box(
                             modifier = Modifier
@@ -118,7 +110,12 @@ fun HomeScreen(
                                 .width(280.dp)
                         ) {
                             SwipeableCard(
-                                onSwiped = { bookViewModel.loadRandomBook() },
+                                onSwiped = {
+                                    book?.let { swipedBook ->
+                                        bookViewModel.likeBook(swipedBook) // ✅ speichert im Journal
+                                    }
+                                    bookViewModel.loadRandomBook()
+                                },
                                 modifier = Modifier.fillMaxSize()
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -140,8 +137,6 @@ fun HomeScreen(
                                     )
                                 }
                             }
-
-                            ConfettiEffect(show = triggerConfetti)
                         }
                     }
                 }
@@ -159,7 +154,6 @@ fun HomeScreen(
                             scope.launch {
                                 delay(1500)
                                 triggerConfetti = false
-
                             }
                         },
                         modifier = Modifier
@@ -167,27 +161,21 @@ fun HomeScreen(
                             .background(buttonColor, shape = CircleShape)
                             .border(2.dp, Color.DarkGray, CircleShape)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Dislike",
-                            tint = iconColor,
-                            modifier = Modifier.size(32.dp)
-                        )
+                        Icon(Icons.Default.Close, contentDescription = "Dislike", tint = iconColor, modifier = Modifier.size(32.dp))
                     }
 
                     IconButton(
-                        onClick = { /* TODO: Like speichern */ },
+                        onClick = {
+                            book?.let {
+                                bookViewModel.likeBook(it)
+                            }
+                        },
                         modifier = Modifier
                             .size(80.dp)
                             .background(buttonColor, shape = CircleShape)
                             .border(2.dp, iconColor, CircleShape)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Favorite,
-                            contentDescription = "Like",
-                            tint = iconColor,
-                            modifier = Modifier.size(32.dp)
-                        )
+                        Icon(Icons.Default.Favorite, contentDescription = "Like", tint = iconColor, modifier = Modifier.size(32.dp))
                     }
                 }
             }
