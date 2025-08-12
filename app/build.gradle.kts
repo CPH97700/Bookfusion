@@ -86,6 +86,7 @@ dependencies {
     implementation("androidx.compose.animation:animation:1.5.4")
     implementation("androidx.compose.foundation:foundation:1.5.4")
     implementation("nl.dionsegijn:konfetti-compose:2.0.5")
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     implementation(libs.moshi)
     implementation(libs.retrofit)

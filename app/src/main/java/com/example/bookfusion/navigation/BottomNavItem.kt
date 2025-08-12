@@ -1,17 +1,31 @@
 package com.example.bookfusion.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesomeMosaic
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class BottomNavItem(
     val route: String,
-    val icon: ImageVector,
-    val label: String
+    val label: String,
+    val icon: ImageVector
 ) {
-    object Home : BottomNavItem("home", Icons.Filled.Book, "Home")
-    object Journal : BottomNavItem("journal", Icons.Filled.Create, "Journal")
-    object Moodboard : BottomNavItem("moodboard", Icons.Filled.AutoAwesomeMosaic, "Moodboard")
+    data object Home : BottomNavItem(
+        route = "home",
+        label = "Home",
+        icon = Icons.Filled.Home
+    )
+
+    data object Journal : BottomNavItem(
+        route = "journal",
+        label = "Journal",
+        icon = Icons.Filled.Book
+    )
+
+    data object Moodboard : BottomNavItem(
+        route = "moodboard",
+        label = "Moodboard",
+        icon = Icons.Filled.AutoAwesome
+    )
 }

@@ -1,6 +1,5 @@
 package com.example.bookfusion.ui
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -28,6 +27,7 @@ import com.example.bookfusion.ui.components.SwipeableCard
 import com.example.bookfusion.viewmodel.AuthViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun HomeScreen(
@@ -35,6 +35,14 @@ fun HomeScreen(
     authViewModel: AuthViewModel,
     bookViewModel: BookViewModel = viewModel()
 ) {
+    val user = FirebaseAuth.getInstance().currentUser
+
+    LaunchedEffect(user?.uid) {
+        if (user != null) {
+            bookViewModel.loadUserBooks()
+        }
+    }
+
     val book by bookViewModel.bookState.collectAsState()
     val uiState by bookViewModel.uiState.collectAsState()
 
@@ -54,7 +62,6 @@ fun HomeScreen(
                 )
             )
     ) {
-        // 🎉 Konfetti oben auf dem Screen (über Buch!)
         ConfettiEffect(show = triggerConfetti)
 
         Column(
@@ -112,7 +119,7 @@ fun HomeScreen(
                             SwipeableCard(
                                 onSwiped = {
                                     book?.let { swipedBook ->
-                                        bookViewModel.likeBook(swipedBook) // ✅ speichert im Journal
+                                        bookViewModel.likeBook(swipedBook)
                                     }
                                     bookViewModel.loadRandomBook()
                                 },

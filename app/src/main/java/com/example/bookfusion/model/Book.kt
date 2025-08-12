@@ -9,7 +9,17 @@ data class BookResponse(
 data class BookItem(
     @Json(name = "id") val id: String = "",
     @Json(name = "volumeInfo") val volumeInfo: VolumeInfo = VolumeInfo()
-)
+) {
+    val coverUrl: String?
+        get() = volumeInfo.imageLinks?.thumbnail
+            ?.replace("http://", "https://")
+
+    val authorString: String
+        get() = volumeInfo.authors?.joinToString(", ") ?: "Unbekannter Autor"
+
+    val titleText: String
+        get() = volumeInfo.title
+}
 
 data class VolumeInfo(
     @Json(name = "title") val title: String = "",

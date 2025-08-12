@@ -1,4 +1,4 @@
-package com.example.bookfusion.data.repository
+package com.example.bookfusion.repository
 
 import android.util.Log
 import com.example.bookapp.data.remote.BookApi
