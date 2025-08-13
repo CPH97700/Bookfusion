@@ -7,17 +7,23 @@ if (localPropertiesFile.exists()) {
     localProperties.load(FileInputStream(localPropertiesFile))
 }
 val apiKey = localProperties.getProperty("GOOGLE_BOOKS_API_KEY") ?: ""
+val apiAccess = localProperties.getProperty("UNSPLASH_ACCESS_KEY") ?: ""
 
 android {
     buildTypes {
         debug {
             buildConfigField("String", "GOOGLE_BOOKS_API_KEY", "\"$apiKey\"")
+            buildConfigField("String", "UNSPLASH_ACCESS_KEY","\"$apiAccess\"")
         }
         release {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             buildConfigField("String", "GOOGLE_BOOKS_API_KEY", "\"$apiKey\"")
+            buildConfigField("String", "UNSPLASH_ACCESS_KEY","\"$apiAccess\"")
         }
     }
     buildFeatures {
+        compose = true
         buildConfig = true
     }
 }
@@ -62,6 +68,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -92,7 +99,14 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converterMoshi)
     implementation(libs.coil.compose)
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
+    implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
 
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    implementation("io.coil-kt:coil-compose:2.6.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

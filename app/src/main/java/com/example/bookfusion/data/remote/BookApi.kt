@@ -1,4 +1,4 @@
-package com.example.bookapp.data.remote
+package com.example.bookfusion.data.remote
 
 import com.example.bookapp.model.BookResponse
 import retrofit2.Retrofit

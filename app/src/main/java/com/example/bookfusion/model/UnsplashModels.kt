@@ -1,22 +1,32 @@
-package com.example.bookfusion.data.remote.unsplash
+package com.example.bookfusion.model
+
 
 import com.squareup.moshi.Json
 
 data class UnsplashSearchResponse(
-    @Json(name = "results") val results: List<UnsplashPhoto> = emptyList(),
-    @Json(name = "total") val total: Int? = null,
-    @Json(name = "total_pages") val totalPages: Int? = null
+    val total: Int,
+    @Json(name = "total_pages") val totalPages: Int,
+    val results: List<UnsplashPhoto>
 )
 
 data class UnsplashPhoto(
-    @Json(name = "id") val id: String,
-    @Json(name = "description") val description: String? = null,
-    @Json(name = "alt_description") val altDescription: String? = null,
-    @Json(name = "urls") val urls: UnsplashUrls
+    val id: String,
+    val description: String?,
+    val alt_description: String?,
+    val urls: UnsplashUrls,
+    val user: UnsplashUser
 )
 
 data class UnsplashUrls(
-    @Json(name = "thumb") val thumb: String? = null,
-    @Json(name = "small") val small: String? = null,
-    @Json(name = "regular") val regular: String? = null
+    val raw: String,
+    val full: String,
+    val regular: String,
+    val small: String,
+    val thumb: String
+)
+
+data class UnsplashUser(
+    val id: String,
+    val name: String,
+    @Json(name = "username") val userName: String
 )

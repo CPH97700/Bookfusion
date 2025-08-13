@@ -15,7 +15,7 @@ import com.example.bookapp.viewmodel.BookViewModel
 import com.example.bookfusion.screens.LoginScreen
 import com.example.bookfusion.screens.SignupScreen
 import com.example.bookfusion.ui.HomeScreen
-import com.example.bookfusion.ui.screens.MoodboardScreen
+import com.example.bookfusion.ui.screens.MoodBoardScreen
 import com.example.bookfusion.ui.screens.StartScreen
 import com.example.bookfusion.viewmodel.AuthViewModel
 
@@ -107,7 +107,7 @@ private fun AppNavHost(
             JournalScreen(bookViewModel)
         }
         composable(BottomNavItem.Moodboard.route) {
-            MoodboardScreen()
+            MoodBoardScreen()
         }
 
 
