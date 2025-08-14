@@ -19,7 +19,9 @@ import com.example.bookfusion.model.UnsplashPhoto
 @Composable
 fun MoodBoardScreen(
     modifier: Modifier = Modifier,
-    vm: UnsplashViewModel = viewModel() // holt dein bestehendes ViewModel
+    vm: UnsplashViewModel = viewModel(),
+    // 👇 neu: optionaler Callback für späteres Öffnen eines Buch-Moodboards
+    onOpenMoodboard: (bookId: String, title: String) -> Unit = { _, _ -> }
 ) {
     val state by vm.ui.collectAsStateWithLifecycle()
 

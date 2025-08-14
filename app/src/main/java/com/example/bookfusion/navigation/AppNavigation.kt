@@ -1,15 +1,21 @@
 package com.example.bookfusion.navigation
 
+import android.net.Uri
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.bookapp.ui.screens.JournalScreen
 import com.example.bookapp.viewmodel.BookViewModel
 import com.example.bookfusion.screens.LoginScreen
@@ -18,6 +24,7 @@ import com.example.bookfusion.ui.HomeScreen
 import com.example.bookfusion.ui.screens.MoodBoardScreen
 import com.example.bookfusion.ui.screens.StartScreen
 import com.example.bookfusion.viewmodel.AuthViewModel
+import com.example.bookfusion.ui.screens.MoodboardDetailScreen
 
 @Composable
 fun AppNavigation(authViewModel: AuthViewModel) {
@@ -34,13 +41,11 @@ fun AppNavigation(authViewModel: AuthViewModel) {
     val currentDestination: NavDestination? = backStackEntry.value?.destination
 
     // Welche Routen gehören zur Bottom Navigation?
-    val bottomRoutes = remember {
-        setOf(
-            BottomNavItem.Home.route,
-            BottomNavItem.Journal.route,
-            BottomNavItem.Moodboard.route
-        )
-    }
+    val bottomRoutes = setOf(
+        BottomNavItem.Home.route,
+        BottomNavItem.Journal.route,
+        BottomNavItem.Moodboard.route
+    )
 
     // BottomBar nur zeigen, wenn User eingeloggt UND auf Bottom-Route
     val showBottomBar = (currentUser != null) &&
@@ -106,10 +111,31 @@ private fun AppNavHost(
         composable(BottomNavItem.Journal.route) {
             JournalScreen(bookViewModel)
         }
+
+        // Übersicht: Moodboard-Regal (NEU: Callback zum Öffnen eines Buch-Moodboards)
         composable(BottomNavItem.Moodboard.route) {
-            MoodBoardScreen()
+            MoodBoardScreen(
+                onOpenMoodboard = { bookId, title ->
+                    navController.navigate("moodboard/$bookId/${Uri.encode(title)}")
+                }
+            )
         }
 
-
+        // Detail: Moodboard für ein ausgewähltes Buch (NEU)
+        composable(
+            route = "moodboard/{bookId}/{title}",
+            arguments = listOf(
+                navArgument("bookId") { type = NavType.StringType },
+                navArgument("title") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val bookId = backStackEntry.arguments?.getString("bookId").orEmpty()
+            val title = backStackEntry.arguments?.getString("title").orEmpty()
+            MoodboardDetailScreen(
+                bookId = bookId,
+                title = title,
+                onBack = { navController.popBackStack() }
+            )
+        }
     }
 }
