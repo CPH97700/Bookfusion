@@ -7,6 +7,7 @@ data class FirestoreBook(
     val coverUrl: String = "",
     val status: String = "FAVORITE",
     val rating: Double? = null,
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    val notes: String? = null
 
 )

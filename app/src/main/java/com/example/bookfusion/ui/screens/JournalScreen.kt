@@ -64,7 +64,11 @@ fun JournalScreen(viewModel: BookViewModel = viewModel()) {
             Spacer(modifier = Modifier.height(16.dp))
 
             if (likedBooks.isNotEmpty()) {
-                Text("⭐ Favoriten", style = MaterialTheme.typography.titleMedium, color = Color(0xFF2A1A5E))
+                Text(
+                    "⭐ Favoriten",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFF2A1A5E)
+                )
                 BookShelfRow(
                     books = likedBooks,
                     onBookClick = { selectedBook = it },
@@ -74,7 +78,11 @@ fun JournalScreen(viewModel: BookViewModel = viewModel()) {
 
             if (readBooks.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(24.dp))
-                Text("📘 Gelesen & Bewertet", style = MaterialTheme.typography.titleMedium, color = Color(0xFF2A1A5E))
+                Text(
+                    "📘 Gelesen & Bewertet",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFF2A1A5E)
+                )
                 BookShelfRow(
                     books = readBooks,
                     onBookClick = { selectedBook = it },
@@ -124,12 +132,10 @@ fun JournalScreen(viewModel: BookViewModel = viewModel()) {
     }
 
     if (showManualEntry) {
+        // ✅ neue Signatur benutzen: viewModel übergeben, onSave entfernt
         ManualEntrySheet(
-            onClose = { showManualEntry = false },
-            onSave = { newBook ->
-                viewModel.likeBook(newBook)
-                showManualEntry = false
-            }
+            viewModel = viewModel,
+            onClose = { showManualEntry = false }
         )
     }
 }
