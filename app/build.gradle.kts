@@ -94,6 +94,10 @@ dependencies {
     implementation("androidx.compose.foundation:foundation:1.5.4")
     implementation("nl.dionsegijn:konfetti-compose:2.0.5")
     implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
+    implementation("androidx.compose.material3:material3")
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
 
     implementation(libs.moshi)
     implementation(libs.retrofit)

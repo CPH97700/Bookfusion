@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/bookfusion/repository/FirebaseRepository.kt
 package com.example.bookfusion.repository
 
 import android.util.Log
@@ -12,140 +13,127 @@ import kotlinx.coroutines.flow.StateFlow
 
 class FirebaseRepository {
 
-    private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 
-    private val _authState = MutableStateFlow(firebaseAuth.currentUser)
+    private val _authState = MutableStateFlow(auth.currentUser)
     val authState: StateFlow<FirebaseUser?> = _authState
 
-    // 📚 State für persistente Bücher
     private val _userBooks = MutableStateFlow<List<FirestoreBook>>(emptyList())
     val userBooks: StateFlow<List<FirestoreBook>> = _userBooks
 
-    private val authListener = FirebaseAuth.AuthStateListener { auth ->
-        _authState.value = auth.currentUser
-        if (auth.currentUser != null) {
-            loadUserBooks() // 🔄 Bücher direkt laden, wenn User eingeloggt
+    private val authListener = FirebaseAuth.AuthStateListener { a ->
+        _authState.value = a.currentUser
+        if (a.currentUser != null) {
+            loadUserBooks()
         } else {
             _userBooks.value = emptyList()
         }
     }
 
     init {
-        firebaseAuth.addAuthStateListener(authListener)
-        if (firebaseAuth.currentUser != null) {
-            loadUserBooks()
-        }
+        auth.addAuthStateListener(authListener)
+        if (auth.currentUser != null) loadUserBooks()
     }
 
     fun clear() {
-        try {
-            firebaseAuth.removeAuthStateListener(authListener)
-        } catch (_: Exception) {
-            // Ignorieren – Listener evtl. schon entfernt
-        }
+        runCatching { auth.removeAuthStateListener(authListener) }
     }
 
+
+
     fun register(email: String, password: String, onResult: (Boolean) -> Unit) {
-        firebaseAuth.createUserWithEmailAndPassword(email, password)
+        auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    Log.d("🔥 FirebaseAuth", "✅ Registrierung erfolgreich")
-                    onResult(true)
+                val ok = task.isSuccessful
+                if (!ok) {
+                    Log.e("Auth", "❌ register failed: ${task.exception?.message}")
                 } else {
-                    Log.e("🔥 FirebaseAuth", "❌ Registrierung fehlgeschlagen: ${task.exception?.message}")
-                    onResult(false)
+                    Log.d("Auth", "✅ register ok")
                 }
+                onResult(ok)
             }
     }
 
     fun login(email: String, password: String, onResult: (Boolean) -> Unit) {
-        firebaseAuth.signInWithEmailAndPassword(email, password)
+        auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    Log.d("🔥 FirebaseAuth", "✅ Login erfolgreich")
-                    onResult(true)
+                val ok = task.isSuccessful
+                if (!ok) {
+                    Log.e("Auth", "❌ login failed: ${task.exception?.message}")
                 } else {
-                    Log.e("🔥 FirebaseAuth", "❌ Login fehlgeschlagen: ${task.exception?.message}")
-                    onResult(false)
+                    Log.d("Auth", "✅ login ok")
                 }
+                onResult(ok)
             }
     }
 
     fun logout() {
-        firebaseAuth.signOut()
-        Log.d("🔥 FirebaseAuth", "🚪 User abgemeldet")
+        auth.signOut()
+        _userBooks.value = emptyList()
+        Log.d("Auth", "🚪 logout")
     }
 
-    private fun userBooksCollection(): CollectionReference? {
-        val uid = firebaseAuth.currentUser?.uid
-        if (uid.isNullOrBlank()) {
-            Log.w("🔥 Firestore", "⚠️ Kein eingeloggter User – Bücher-Sammlung nicht verfügbar")
-            return null
-        }
-        return firestore.collection("users").document(uid).collection("books")
+
+
+    private fun col(): CollectionReference? {
+        val uid = auth.currentUser?.uid ?: return null
+        return db.collection("users").document(uid).collection("books")
     }
 
-    // 💾 Buch speichern/aktualisieren
     fun saveBook(book: FirestoreBook, onResult: (Boolean) -> Unit) {
-        val col = userBooksCollection() ?: return onResult(false)
-
-        col.document(book.id)
+        val c = col() ?: return onResult(false)
+        c.document(book.id)
             .set(book)
             .addOnSuccessListener {
-                Log.d("🔥 Firestore", "✅ Buch gespeichert: ${book.title}")
-                loadUserBooks() // 🔄 State updaten
+                Log.d("FirestoreBooks", "✅ gespeichert: ${book.title}")
+                loadUserBooks()
                 onResult(true)
             }
             .addOnFailureListener { e ->
-                Log.e("🔥 Firestore", "❌ Fehler beim Speichern: ${e.message}")
+                Log.e("FirestoreBooks", "❌ Speichern fehlgeschlagen: ${e.message}")
                 onResult(false)
-            }
-    }
-
-    // 📥 Bücher aus Firestore holen und im State speichern
-    fun loadUserBooks() {
-        val col = userBooksCollection() ?: return
-        col.get()
-            .addOnSuccessListener { snapshot ->
-                val books = snapshot.toObjects<FirestoreBook>()
-                _userBooks.value = books
-                Log.d("🔥 Firestore", "📚 ${books.size} Bücher geladen")
-            }
-            .addOnFailureListener { e ->
-                Log.e("🔥 Firestore", "❌ Fehler beim Laden: ${e.message}")
-            }
-    }
-
-    fun getBooks(onResult: (List<FirestoreBook>?) -> Unit) {
-        val col = userBooksCollection() ?: return onResult(emptyList())
-
-        col.get()
-            .addOnSuccessListener { snapshot ->
-                val books = snapshot.toObjects<FirestoreBook>()
-                _userBooks.value = books
-                Log.d("🔥 Firestore", "📚 ${books.size} Bücher geladen")
-                onResult(books)
-            }
-            .addOnFailureListener { e ->
-                Log.e("🔥 Firestore", "❌ Fehler beim Laden: ${e.message}")
-                onResult(null)
             }
     }
 
     fun deleteBook(bookId: String, onResult: (Boolean) -> Unit) {
-        val col = userBooksCollection() ?: return onResult(false)
-
-        col.document(bookId)
+        val c = col() ?: return onResult(false)
+        c.document(bookId)
             .delete()
             .addOnSuccessListener {
-                Log.d("🔥 Firestore", "🗑 Buch gelöscht: $bookId")
-                loadUserBooks() // 🔄 State updaten
+                Log.d("FirestoreBooks", "🗑 gelöscht: $bookId")
+                loadUserBooks()
                 onResult(true)
             }
             .addOnFailureListener { e ->
-                Log.e("🔥 Firestore", "❌ Fehler beim Löschen: ${e.message}")
+                Log.e("FirestoreBooks", "❌ Löschen fehlgeschlagen: ${e.message}")
                 onResult(false)
+            }
+    }
+
+    fun loadUserBooks() {
+        val c = col() ?: return
+        c.get()
+            .addOnSuccessListener { snap ->
+                _userBooks.value = snap.toObjects()
+                Log.d("FirestoreBooks", "📚 geladen: ${_userBooks.value.size}")
+            }
+            .addOnFailureListener { e ->
+                Log.e("FirestoreBooks", "❌ Laden fehlgeschlagen: ${e.message}")
+            }
+    }
+
+    fun getBooks(onResult: (List<FirestoreBook>?) -> Unit) {
+        val c = col() ?: return onResult(emptyList())
+        c.get()
+            .addOnSuccessListener { snap ->
+                val books = snap.toObjects<FirestoreBook>()
+                _userBooks.value = books
+                onResult(books)
+            }
+            .addOnFailureListener { e ->
+                Log.e("FirestoreBooks", "❌ getBooks fehlgeschlagen: ${e.message}")
+                onResult(null)
             }
     }
 }

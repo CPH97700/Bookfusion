@@ -19,8 +19,8 @@ import com.example.bookapp.model.BookItem
 fun BookShelfRow(
     books: List<BookItem>,
     onBookClick: (BookItem) -> Unit,
-    showLike: Boolean = false,                      // <-- neu
-    onLike: ((BookItem) -> Unit)? = null            // <-- neu
+    showLike: Boolean = false,
+    onLike: ((BookItem) -> Unit)? = null
 ) {
     LazyRow(
         contentPadding = PaddingValues(horizontal = 8.dp),
@@ -30,7 +30,6 @@ fun BookShelfRow(
             Box(
                 modifier = Modifier.wrapContentSize()
             ) {
-                // Dein vorhandenes Cover-Composable
                 BookCover(book = book, onClick = { onBookClick(book) })
 
                 if (showLike && onLike != null) {

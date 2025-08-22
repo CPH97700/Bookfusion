@@ -23,6 +23,11 @@ class BookViewModel : ViewModel() {
     private val repository = BookRepositoryImpl()
     private val firebaseRepository = FirebaseRepository()
 
+    val firestoreBooks: StateFlow<List<FirestoreBook>> = firebaseRepository.userBooks
+
+    fun getMetaFor(bookId: String): FirestoreBook? =
+        firestoreBooks.value.firstOrNull { it.id == bookId }
+
     private val _bookState = MutableStateFlow<BookItem?>(null)
     val bookState: StateFlow<BookItem?> = _bookState
 
@@ -35,16 +40,16 @@ class BookViewModel : ViewModel() {
     private val _readBooks = mutableStateListOf<BookItem>()
     val readBooks: List<BookItem> = _readBooks
 
-    // ---------- NEU: UI-State für manuelle Suche ----------
     private val _searchResults = MutableStateFlow<List<BookItem>>(emptyList())
     val searchResults: StateFlow<List<BookItem>> = _searchResults
 
-    /** 🔎 Suche per ISBN (10/13) ODER Titel → füllt _searchResults (debounced vom Sheet aufrufen) */
     fun searchBooksByQuery(queryRaw: String) {
+        Log.d("BookViewModel", "🔍 searchBooksByQuery gestartet mit: $queryRaw")
         viewModelScope.launch(Dispatchers.IO) {
             val q = queryRaw.trim()
             if (q.isBlank()) {
                 _searchResults.value = emptyList()
+                Log.d("BookViewModel", "⛔ Leere Suche – keine Ergebnisse")
                 return@launch
             }
             val looksLikeIsbn = q.replace("-", "").matches(Regex("""^\d{10}(\d{3})?$"""))
@@ -54,14 +59,18 @@ class BookViewModel : ViewModel() {
                 BookApi.retrofitService.searchBooks(query = query, maxResults = 8)
             }.onSuccess { resp ->
                 _searchResults.value = resp.items ?: emptyList()
+                Log.d("BookViewModel", "✅ ${_searchResults.value.size} Ergebnisse gefunden")
+
             }.onFailure {
                 _searchResults.value = emptyList()
+                Log.e("BookViewModel", "❌ Suche fehlgeschlagen: ${it.message}")
+
             }
         }
     }
 
-    /** 🔎 Einzel-Suche (für addManualRead): liefert bestes Treffer-Buch oder null. */
     suspend fun searchBookByQuery(queryRaw: String): BookItem? {
+        Log.d("BookViewModel", "🔍 searchBookByQuery($queryRaw)")
         val q = queryRaw.trim()
         if (q.isEmpty()) return null
 
@@ -87,8 +96,8 @@ class BookViewModel : ViewModel() {
         }
     }
 
-    /** ➕ Manuelles Hinzufügen direkt als 'READ' inkl. Bewertung & Notizen. */
     fun addManualRead(queryOrTitle: String, rating: Double, notes: String) {
+        Log.d("BookViewModel", "➕ addManualRead: $queryOrTitle, $rating★")
         viewModelScope.launch(Dispatchers.IO) {
             val found = searchBookByQuery(queryOrTitle)
 
@@ -101,14 +110,11 @@ class BookViewModel : ViewModel() {
                 )
             )
 
-            // UI-Liste aktualisieren
             if (_readBooks.none { it.id == book.id }) {
                 _readBooks.add(0, book)
             }
-            // ggf. aus Favoriten entfernen
             _likedBooks.removeAll { it.id == book.id }
 
-            // Firestore speichern (READ + Rating + Notes)
             val fb = FirestoreBook(
                 id = book.id,
                 title = book.volumeInfo.title,
@@ -124,14 +130,12 @@ class BookViewModel : ViewModel() {
         }
     }
 
-    /** ⭐ READ inkl. Notizen (wenn ein bereits geladenes BookItem ausgewählt wurde) */
     fun rateBookWithNotes(book: BookItem, rating: Double, notes: String?) {
         _likedBooks.removeAll { it.id == book.id }
         if (_readBooks.none { it.id == book.id }) _readBooks.add(0, book)
         saveReadToFirestoreWithNotes(book, rating, notes)
     }
 
-    /** 🔹 Firestore-Speichern: READ + Rating + Notes */
     private fun saveReadToFirestoreWithNotes(book: BookItem, rating: Double, notes: String?) {
         val firestoreBook = FirestoreBook(
             id = book.id,
@@ -147,18 +151,13 @@ class BookViewModel : ViewModel() {
         }
     }
 
-    // ================== Bestehende Logik (unverändert) ==================
-
-    /** ❤️ Nur in Favoriten (nicht mehr automatisch als gelesen markieren) */
     fun likeBook(book: BookItem) {
-        Log.d("BookViewModel", "❤️ Buch geliked: ${book.volumeInfo.title}")
         if (_likedBooks.none { it.id == book.id }) {
             _likedBooks.add(book)
         }
         saveFavoriteToFirestore(book)
     }
 
-    /** ⭐ Beim Bewerten: aus Favoriten entfernen, nach Gelesen & Bewertet verschieben */
     fun rateBook(book: BookItem, rating: Double) {
         _likedBooks.removeAll { it.id == book.id }
         if (_readBooks.none { it.id == book.id }) {
@@ -186,7 +185,6 @@ class BookViewModel : ViewModel() {
         }
     }
 
-    /** 🔹 Favorit in Firestore anlegen */
     private fun saveFavoriteToFirestore(book: BookItem) {
         val firestoreBook = FirestoreBook(
             id = book.id,
@@ -197,15 +195,10 @@ class BookViewModel : ViewModel() {
             rating = null
         )
         firebaseRepository.saveBook(firestoreBook) { success ->
-            if (success) {
-                Log.d("BookViewModel", "✅ Als FAVORITE gespeichert: ${book.volumeInfo.title}")
-            } else {
-                Log.e("BookViewModel", "❌ Favorit konnte nicht gespeichert werden")
-            }
+            if (!success) Log.e("BookViewModel", "❌ Favorit konnte nicht gespeichert werden")
         }
     }
 
-    /** 🔹 Gelesen & bewertet in Firestore speichern (ohne Notes – weiterhin für bestehende Stellen) */
     private fun saveReadToFirestore(book: BookItem, rating: Double) {
         val firestoreBook = FirestoreBook(
             id = book.id,
@@ -216,11 +209,7 @@ class BookViewModel : ViewModel() {
             rating = rating
         )
         firebaseRepository.saveBook(firestoreBook) { success ->
-            if (success) {
-                Log.d("BookViewModel", "✅ Als READ mit Rating $rating gespeichert: ${book.volumeInfo.title}")
-            } else {
-                Log.e("BookViewModel", "❌ READ/Rating konnte nicht gespeichert werden")
-            }
+            if (!success) Log.e("BookViewModel", "❌ READ/Rating konnte nicht gespeichert werden")
         }
     }
 
@@ -229,37 +218,21 @@ class BookViewModel : ViewModel() {
             if (success) {
                 _likedBooks.removeAll { it.id == bookId }
                 _readBooks.removeAll { it.id == bookId }
-                Log.d("BookViewModel", "🗑 Buch gelöscht: $bookId")
-            } else {
-                Log.e("BookViewModel", "❌ Buch konnte nicht gelöscht werden")
             }
         }
     }
 
-    /** 🔄 Lädt alle Bücher für den eingeloggten Nutzer aus Firestore */
     fun loadUserBooks() {
         firebaseRepository.getBooks { books ->
             if (books != null) {
                 _likedBooks.clear()
                 _readBooks.clear()
-
-                _likedBooks.addAll(
-                    books.filter { it.status == "FAVORITE" }
-                        .map { it.toBookItem() }
-                )
-                _readBooks.addAll(
-                    books.filter { it.status == "READ" }
-                        .map { it.toBookItem() }
-                )
-
-                Log.d("BookViewModel", "📚 Bücher geladen → ${_likedBooks.size} Favoriten, ${_readBooks.size} gelesen")
-            } else {
-                Log.w("BookViewModel", "⚠️ Keine Bücher gefunden oder Fehler beim Laden")
+                _likedBooks.addAll(books.filter { it.status == "FAVORITE" }.map { it.toBookItem() })
+                _readBooks.addAll(books.filter { it.status == "READ" }.map { it.toBookItem() })
             }
         }
     }
 
-    /** 🔄 Konvertiert FirestoreBook zurück zu BookItem */
     private fun FirestoreBook.toBookItem(): BookItem {
         return BookItem(
             id = this.id,
@@ -271,5 +244,53 @@ class BookViewModel : ViewModel() {
                 imageLinks = ImageLinks(thumbnail = this.coverUrl)
             )
         )
+    }
+
+
+    fun updateNotes(bookId: String, notes: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // 1) Falls bereits Metadaten vorhanden sind: nur Notes ersetzen
+            val current = getMetaFor(bookId)
+            if (current != null) {
+                val updated = current.copy(notes = notes)
+                firebaseRepository.saveBook(updated) { success ->
+                    if (!success) Log.e("BookViewModel", "❌ updateNotes: Speichern fehlgeschlagen")
+                }
+                return@launch
+            }
+
+            val localBook = (_readBooks + _likedBooks).firstOrNull { it.id == bookId }
+            if (localBook != null) {
+                _likedBooks.removeAll { it.id == bookId }
+                if (_readBooks.none { it.id == bookId }) _readBooks.add(0, localBook)
+
+                val fb = FirestoreBook(
+                    id = localBook.id,
+                    title = localBook.volumeInfo.title,
+                    author = localBook.volumeInfo.authors?.joinToString(", ") ?: "",
+                    coverUrl = localBook.volumeInfo.imageLinks?.thumbnail ?: "",
+                    status = "READ",
+                    rating = getMetaFor(bookId)?.rating, // falls doch irgendwo vorhanden
+                    notes = notes
+                )
+                firebaseRepository.saveBook(fb) { success ->
+                    if (!success) Log.e("BookViewModel", "❌ updateNotes: Neu anlegen fehlgeschlagen")
+                }
+                return@launch
+            }
+
+            val minimal = FirestoreBook(
+                id = bookId,
+                title = "",
+                author = "",
+                coverUrl = "",
+                status = "READ",
+                rating = null,
+                notes = notes
+            )
+            firebaseRepository.saveBook(minimal) { success ->
+                if (!success) Log.e("BookViewModel", "❌ updateNotes: Minimal anlegen fehlgeschlagen")
+            }
+        }
     }
 }

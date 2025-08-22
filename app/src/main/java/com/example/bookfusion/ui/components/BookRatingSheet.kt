@@ -13,8 +13,8 @@ import com.example.bookapp.model.BookItem
 fun BookRatingSheet(
     book: BookItem,
     onClose: () -> Unit,
-    onConfirm: (rating: Double) -> Unit,   // <-- neu
-    onDelete: () -> Unit = {}              // optional beibehalten
+    onConfirm: (rating: Double) -> Unit,
+    onDelete: () -> Unit = {}
 ) {
     ModalBottomSheet(onDismissRequest = onClose) {
         var rating by remember { mutableStateOf(3.0f) } // Default 3.0
@@ -28,10 +28,9 @@ fun BookRatingSheet(
             Text("Bewerte dieses Buch")
             Spacer(Modifier.height(12.dp))
 
-            // 0..5, in 0.5-Schritten (steps = 9, da min/max ausgenommen)
             Slider(
                 value = rating,
-                onValueChange = { rating = (Math.round(it * 2) / 2f) }, // sauber auf 0.5 runden
+                onValueChange = { rating = (Math.round(it * 2) / 2f) },
                 valueRange = 0f..5f,
                 steps = 9
             )
@@ -55,7 +54,7 @@ fun BookRatingSheet(
                 ) { Text("Schließen") }
 
                 Button(
-                    onClick = { onConfirm(rating.toDouble()) },  // <-- gibt Wert zurück
+                    onClick = { onConfirm(rating.toDouble()) },
                     modifier = Modifier.weight(1f)
                 ) { Text("Speichern") }
             }

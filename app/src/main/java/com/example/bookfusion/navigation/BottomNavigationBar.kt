@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/bookfusion/navigation/BottomNavigationBar.kt
 package com.example.bookfusion.navigation
 
 import androidx.compose.material3.Icon
@@ -17,7 +18,8 @@ fun BottomNavigationBar(
     val items = listOf(
         BottomNavItem.Home,
         BottomNavItem.Journal,
-        BottomNavItem.Moodboard
+        BottomNavItem.Moodboard,
+        BottomNavItem.Settings
     )
 
     val backStackEntry by navController.currentBackStackEntryAsState()

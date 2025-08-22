@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -22,36 +23,34 @@ import com.example.bookfusion.screens.LoginScreen
 import com.example.bookfusion.screens.SignupScreen
 import com.example.bookfusion.ui.HomeScreen
 import com.example.bookfusion.ui.screens.MoodBoardScreen
+import com.example.bookfusion.ui.screens.MoodboardBookIntroScreen
+import com.example.bookfusion.ui.screens.MoodboardDetailScreen
+import com.example.bookfusion.ui.screens.SettingsScreen
 import com.example.bookfusion.ui.screens.StartScreen
 import com.example.bookfusion.viewmodel.AuthViewModel
-import com.example.bookfusion.ui.screens.MoodboardDetailScreen
+import com.example.bookfusion.viewmodel.MoodboardViewModel
 
 @Composable
 fun AppNavigation(authViewModel: AuthViewModel) {
     val navController = rememberNavController()
 
-    // ViewModels, die in mehreren Screens verwendet werden
     val bookViewModel = viewModel<BookViewModel>()
+    val moodboardVM  = viewModel<MoodboardViewModel>()
 
-    // Login-State
     val currentUser by authViewModel.currentUser.collectAsState()
 
-    // Aktuelle Route beobachten (für BottomBar-Visibility & Selection)
     val backStackEntry = navController.currentBackStackEntryAsState()
     val currentDestination: NavDestination? = backStackEntry.value?.destination
 
-    // Welche Routen gehören zur Bottom Navigation?
     val bottomRoutes = setOf(
         BottomNavItem.Home.route,
         BottomNavItem.Journal.route,
         BottomNavItem.Moodboard.route
     )
 
-    // BottomBar nur zeigen, wenn User eingeloggt UND auf Bottom-Route
     val showBottomBar = (currentUser != null) &&
             currentDestination?.hierarchy?.any { it.route in bottomRoutes } == true
 
-    // Wenn sich der Login-Status ändert, auf die passende Route navigieren (Stack clean)
     LaunchedEffect(currentUser) {
         if (currentUser == null) {
             navController.navigate("start") {
@@ -67,19 +66,14 @@ fun AppNavigation(authViewModel: AuthViewModel) {
     }
 
     Scaffold(
-        bottomBar = {
-            if (showBottomBar) {
-                BottomNavigationBar(
-                    navController = navController,
-                )
-            }
-        }
+        bottomBar = { if (showBottomBar) BottomNavigationBar(navController = navController) }
     ) { padding ->
         AppNavHost(
             padding = padding,
             navController = navController,
             authViewModel = authViewModel,
-            bookViewModel = bookViewModel
+            bookViewModel = bookViewModel,
+            moodboardVM  = moodboardVM
         )
     }
 }
@@ -87,55 +81,107 @@ fun AppNavigation(authViewModel: AuthViewModel) {
 @Composable
 private fun AppNavHost(
     padding: PaddingValues,
-    navController: androidx.navigation.NavHostController,
+    navController: NavHostController,
     authViewModel: AuthViewModel,
-    bookViewModel: BookViewModel
+    bookViewModel: BookViewModel,
+    moodboardVM: MoodboardViewModel
 ) {
-    // Startziel abhängig vom Login-State: wird zusätzlich durch LaunchedEffect gesichert
     val currentUser by authViewModel.currentUser.collectAsState()
     val startDestination = if (currentUser == null) "start" else BottomNavItem.Home.route
 
-    NavHost(
-        navController = navController,
-        startDestination = startDestination
-    ) {
-        // Auth / Onboarding
+    NavHost(navController = navController, startDestination = startDestination) {
+        // Auth
         composable("start") { StartScreen(navController) }
         composable("login") { LoginScreen(navController, authViewModel) }
         composable("signup") { SignupScreen(navController, authViewModel) }
 
-        // Bottom-Navigation Ziele
         composable(BottomNavItem.Home.route) {
             HomeScreen(navController, authViewModel, bookViewModel)
         }
-        composable(BottomNavItem.Journal.route) {
-            JournalScreen(bookViewModel)
-        }
 
-        // Übersicht: Moodboard-Regal (NEU: Callback zum Öffnen eines Buch-Moodboards)
-        composable(BottomNavItem.Moodboard.route) {
-            MoodBoardScreen(
+        composable(BottomNavItem.Journal.route) {
+            JournalScreen(
+                viewModel = bookViewModel,
                 onOpenMoodboard = { bookId, title ->
-                    navController.navigate("moodboard/$bookId/${Uri.encode(title)}")
+                    val coverUrl = run {
+                        val liked = bookViewModel.likedBooks.firstOrNull { it.id == bookId }
+                        val read  = bookViewModel.readBooks.firstOrNull { it.id == bookId }
+                        val item = liked ?: read
+                        item?.volumeInfo?.imageLinks?.thumbnail
+                            ?.replace("http://", "https://")
+                            .orEmpty()
+                    }
+                    moodboardVM.addBookIfMissing(bookId, title, coverUrl)
+                    navController.navigate(BottomNavItem.Moodboard.route)
                 }
             )
         }
 
-        // Detail: Moodboard für ein ausgewähltes Buch (NEU)
+
+        composable(BottomNavItem.Moodboard.route) {
+            MoodBoardScreen(
+                entriesFlow = moodboardVM.entries,
+                onOpenMoodboard = { bookId, title ->
+                    navController.navigate("moodboard/intro/$bookId/${Uri.encode(title)}")
+                }
+            )
+        }
+
+        composable(
+            route = "moodboard/intro/{bookId}/{title}",
+            arguments = listOf(
+                navArgument("bookId") { type = NavType.StringType },
+                navArgument("title")  { type = NavType.StringType }
+            )
+        ) { back ->
+            val bookId = back.arguments?.getString("bookId").orEmpty()
+            val title  = back.arguments?.getString("title").orEmpty()
+
+            val entry = moodboardVM.entries.collectAsState().value.firstOrNull { it.bookId == bookId }
+            val coverUrl = entry?.coverUrl ?: run {
+                val liked = bookViewModel.likedBooks.firstOrNull { it.id == bookId }
+                val read  = bookViewModel.readBooks.firstOrNull { it.id == bookId }
+                val item = liked ?: read
+                item?.volumeInfo?.imageLinks?.thumbnail?.replace("http://", "https://").orEmpty()
+            }
+
+            MoodboardBookIntroScreen(
+                bookId = bookId,
+                title = title,
+                coverUrl = coverUrl,
+                onBack = { navController.popBackStack() },
+                onAddClick = {
+                    // jump into builder (search & add photos)
+                    navController.navigate("moodboard/$bookId/${Uri.encode(title)}")
+                },
+                moodboardVM = moodboardVM
+            )
+        }
+
         composable(
             route = "moodboard/{bookId}/{title}",
             arguments = listOf(
                 navArgument("bookId") { type = NavType.StringType },
-                navArgument("title") { type = NavType.StringType }
+                navArgument("title")  { type = NavType.StringType }
             )
-        ) { backStackEntry ->
-            val bookId = backStackEntry.arguments?.getString("bookId").orEmpty()
-            val title = backStackEntry.arguments?.getString("title").orEmpty()
+        ) { back ->
+            val bookId = back.arguments?.getString("bookId").orEmpty()
+            val title  = back.arguments?.getString("title").orEmpty()
+
             MoodboardDetailScreen(
                 bookId = bookId,
-                title = title,
-                onBack = { navController.popBackStack() }
+                title  = title,
+                onBack = { navController.popBackStack() },
+                moodboardVM = moodboardVM
+            )
+        }
+        composable("settings") {
+            SettingsScreen(
+                navController = navController,
+                authViewModel = authViewModel
             )
         }
     }
 }
+
+
