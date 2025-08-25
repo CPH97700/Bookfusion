@@ -9,6 +9,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.example.bookfusion.BuildConfig
 
+
 const val BASE_URL = "https://www.googleapis.com/books/v1/"
 
 private val moshi = Moshi.Builder()
@@ -20,6 +21,12 @@ private val retrofit = Retrofit.Builder()
     .addConverterFactory(MoshiConverterFactory.create(moshi))
     .build()
 
+/**
+ * Hier sage ich, wie ich mit der Google Books API rede.
+ *
+ * Mit der Funktion [searchBooks] kann ich Bücher suchen
+ * und bekomme die Antwort als [BookResponse] zurück.
+ */
 
 interface BookApiService {
     @GET("volumes")
@@ -27,11 +34,15 @@ interface BookApiService {
         @Query("q") query: String,
         @Query("langRestrict") lang: String = "de|en",
         @Query("printType") printType: String = "books",
-        @Query("maxResults") maxResults: Int = 20,
+        @Query("maxResults") maxResults: Int = 100,
         @Query("key") apiKey: String = BuildConfig.GOOGLE_BOOKS_API_KEY
     ): BookResponse
 }
 
+/**
+ * Dieses Objekt baut mir den Service nur einmal
+ * und ich kann ihn überall in der App benutzen.
+ */
 object BookApi {
     val retrofitService: BookApiService by lazy {
         retrofit.create(BookApiService::class.java)

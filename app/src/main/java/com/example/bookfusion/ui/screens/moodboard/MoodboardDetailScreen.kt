@@ -1,10 +1,6 @@
-package com.example.bookfusion.ui.screens
+package com.example.bookfusion.ui.screens.moodboard
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -12,17 +8,35 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import com.example.bookfusion.model.UnsplashPhoto
-import com.example.bookfusion.viewmodel.MoodboardViewModel
-import com.example.bookfusion.viewmodel.UnsplashViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bookfusion.model.UnsplashPhoto
+import com.example.bookfusion.ui.screens.moodboard.components.PhotoGrid
+import com.example.bookfusion.ui.screens.moodboard.components.UnsplashSearchBar
+import com.example.bookfusion.viewmodel.MoodboardViewModel
+import com.example.bookfusion.viewmodel.UnsplashViewModel
 import kotlinx.coroutines.launch
 
+/**
+ * **MoodboardDetailScreen**
+ *
+ * Zeigt die **Detailansicht eines Moodboards** für ein bestimmtes Buch.
+ * Features:
+ * - 📸 Anzeige aller bereits gespeicherten Fotos (Moodboard-Einträge)
+ * - 🔍 Unsplash-Suche nach neuen Fotos (per Titel voreingestellt)
+ * - ➕ Möglichkeit, Fotos ins Moodboard zu übernehmen
+ * - 🔙 Navigation zurück über die TopBar
+ * - 🍞 Snackbar-Benachrichtigung bei Aktionen
+ *
+ * @param bookId Die eindeutige ID des Buches
+ * @param title Titel des Buches → wird automatisch auch für die Unsplash-Suche genutzt
+ * @param onBack Callback, wenn der Nutzer zurück navigieren möchte
+ * @param moodboardVM ViewModel für gespeicherte Moodboard-Daten
+ * @param unsplashVM ViewModel für Unsplash-Suche und Suchzustände
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun  MoodboardDetailScreen(
+fun MoodboardDetailScreen(
     bookId: String,
     title: String,
     onBack: () -> Unit,
@@ -67,28 +81,33 @@ fun  MoodboardDetailScreen(
             if (saved.isEmpty()) {
                 Text("Noch keine Fotos gespeichert.")
             } else {
-                PhotoGrid(photos = saved, onPick = { /* ggf. Vollbild/Remove */ })
+                PhotoGrid(photos = saved, onPick = {
+                })
             }
 
             HorizontalDivider()
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = ui.query,
-                    onValueChange = unsplashVM::updateQuery,
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Unsplash-Suche") },
-                    singleLine = true
-                )
-                Spacer(Modifier.width(8.dp))
-                Button(onClick = unsplashVM::search) { Text("Suchen") }
-            }
+            UnsplashSearchBar(
+                query = ui.query,
+                onQueryChange = unsplashVM::updateQuery,
+                onSearch = unsplashVM::search
+            )
 
             when {
-                ui.isLoading -> Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
+                ui.isLoading -> Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     CircularProgressIndicator()
                 }
-                ui.error != null -> Text("Fehler: ${ui.error}", color = MaterialTheme.colorScheme.error)
+
+                ui.error != null -> Text(
+                    "Fehler: ${ui.error}",
+                    color = MaterialTheme.colorScheme.error
+                )
+
                 else -> {
                     Text("Ergebnisse", style = MaterialTheme.typography.titleMedium)
                     PhotoGrid(photos = ui.photos) { p ->
@@ -97,27 +116,6 @@ fun  MoodboardDetailScreen(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun PhotoGrid(photos: List<UnsplashPhoto>, onPick: (UnsplashPhoto) -> Unit) {
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 120.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        items(photos, key = { it.id }) { p ->
-            AsyncImage(
-                model = p.urls.small,
-                contentDescription = p.alt_description ?: p.description ?: "Foto",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .clickable { onPick(p) }
-            )
         }
     }
 }

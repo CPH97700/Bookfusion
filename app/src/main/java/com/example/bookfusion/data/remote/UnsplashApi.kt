@@ -11,6 +11,10 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 
 private const val UNSPLASH_BASE_URL = "https://api.unsplash.com/"
 
+/**
+ * Sorgt dafür, dass bei jeder Anfrage automatisch
+ * mein Unsplash API-Key im Header mitgeschickt wird.
+ */
 private val authInterceptor = Interceptor { chain ->
     val req = chain.request().newBuilder()
         .addHeader("Authorization", "Client-ID ${BuildConfig.UNSPLASH_ACCESS_KEY}")
@@ -18,6 +22,10 @@ private val authInterceptor = Interceptor { chain ->
     chain.proceed(req)
 }
 
+/**
+ * Schaltet einfaches Logging an, damit ich im Logcat sehen kann,
+ * welche Requests rausgehen.
+ */
 private val logging = HttpLoggingInterceptor().apply {
     level = HttpLoggingInterceptor.Level.BASIC
 }
@@ -37,6 +45,11 @@ private val retrofit = Retrofit.Builder()
     .client(okHttp)
     .build()
 
+/**
+ * Baut mir einmal den Unsplash-Service auf,
+ * so dass ich überall in der App über [UnsplashApi.service]
+ * Fotos von Unsplash anfragen kann.
+ */
 object UnsplashApi {
     val service: UnsplashApiService by lazy { retrofit.create(UnsplashApiService::class.java) }
 }

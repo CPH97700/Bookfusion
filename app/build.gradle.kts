@@ -97,6 +97,7 @@ dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.material3:material3")
     implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("com.google.android.gms:play-services-base:LATEST_VERSION")
 
 
     implementation(libs.moshi)

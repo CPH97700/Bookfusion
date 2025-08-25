@@ -16,8 +16,31 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+/** Enum für UI-State (Ladezustand, Fehler, bereit) */
 enum class DataState { LOADING, READY, ERROR }
 
+/**
+ * **BookViewModel**
+ *
+ * Zentrale **State- und Logik-Schicht** für Bücher:
+ * Steuert UI-State, lädt Daten von **Google Books API**,
+ * synchronisiert mit **Firebase Firestore** und verwaltet lokale Pools.
+ *
+ * ---
+ * 🔑 **Features:**
+ * - 📚 **Random Book Discovery**: holt Bücher aus Google Books, filtert Self-Help/Biographien raus
+ * - ❤️ **Like/Favorite**: speichert als Favorit in Firestore
+ * - ⭐ **Rating/Read**: bewertet Bücher, verschiebt in "Read"-Liste, speichert mit optionalen Notizen
+ * - ✍️ **Manuelle Eingabe**: ISBN/Titel-Suche & eigenes Hinzufügen
+ * - 🔄 **StateFlows**: steuern UI-Reaktivität (`bookState`, `uiState`, `firestoreBooks`, `searchResults`)
+ *
+ * ---
+ * **Architektur-Flow:**
+ *
+ * UI → **BookViewModel** → (BookRepositoryImpl = Google Books API)
+ *                       → (FirebaseRepository = Firestore Sync)
+ *
+ */
 class BookViewModel : ViewModel() {
 
     private val repository = BookRepositoryImpl()
@@ -43,13 +66,84 @@ class BookViewModel : ViewModel() {
     private val _searchResults = MutableStateFlow<List<BookItem>>(emptyList())
     val searchResults: StateFlow<List<BookItem>> = _searchResults
 
+    // --------------------- Pool + Genre-Filter ---------------------
+
+    private val preloadPool = ArrayDeque<BookItem>()
+
+    private val subjectQueries = listOf(
+        "subject:Fantasy",
+        "subject:Romance",
+        "subject:Young Adult",
+        "subject:Young Adult Fiction",
+        "subject:Paranormal",
+        "subject:Fantasy Romance"
+    )
+
+    private val keywordQueries = listOf(
+        "romantasy",
+        "\"dark romance\"",
+        "\"fae romance\"",
+        "\"enemies to lovers\"",
+        "\"slow burn\" romance",
+        "ya fantasy"
+    )
+
+    private val blockedTitleKeywords = listOf(
+        "self-help", "self help",
+        "biography", "autobiography", "memoir"
+    )
+
+    private val seenIds = mutableSetOf<String>()
+
+    private fun isBlockedByTitle(title: String?): Boolean {
+        if (title.isNullOrBlank()) return false
+        val t = title.lowercase()
+        return blockedTitleKeywords.any { t.contains(it) }
+    }
+
+    private suspend fun fetchBatch(targetCount: Int = 24): List<BookItem> {
+        val queries = (subjectQueries + keywordQueries).shuffled()
+        val out = LinkedHashMap<String, BookItem>()
+
+        for (q in queries) {
+            if (out.size >= targetCount) break
+            try {
+                val resp = BookApi.retrofitService.searchBooks(query = q, maxResults = 40)
+                val items = resp.items.orEmpty()
+                for (it in items) {
+                    val id = it.id ?: continue
+                    if (id in seenIds || id in out) continue
+                    val title = it.volumeInfo?.title
+                    if (isBlockedByTitle(title)) continue
+                    out[id] = it
+                    if (out.size >= targetCount) break
+                }
+            } catch (e: Exception) {
+                Log.e("BookViewModel", "fetchBatch('$q') failed: ${e.message}")
+            }
+        }
+        return out.values.toList()
+    }
+
+    private suspend fun ensurePool(minSize: Int = 6) {
+        if (preloadPool.size >= minSize) return
+        val batch = fetchBatch(targetCount = 24)
+        batch.forEach { item ->
+            val id = item.id ?: return@forEach
+            if (id !in seenIds) {
+                preloadPool.addLast(item)
+                seenIds.add(id)
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+
     fun searchBooksByQuery(queryRaw: String) {
-        Log.d("BookViewModel", "🔍 searchBooksByQuery gestartet mit: $queryRaw")
         viewModelScope.launch(Dispatchers.IO) {
             val q = queryRaw.trim()
             if (q.isBlank()) {
                 _searchResults.value = emptyList()
-                Log.d("BookViewModel", "⛔ Leere Suche – keine Ergebnisse")
                 return@launch
             }
             val looksLikeIsbn = q.replace("-", "").matches(Regex("""^\d{10}(\d{3})?$"""))
@@ -59,18 +153,13 @@ class BookViewModel : ViewModel() {
                 BookApi.retrofitService.searchBooks(query = query, maxResults = 8)
             }.onSuccess { resp ->
                 _searchResults.value = resp.items ?: emptyList()
-                Log.d("BookViewModel", "✅ ${_searchResults.value.size} Ergebnisse gefunden")
-
             }.onFailure {
                 _searchResults.value = emptyList()
-                Log.e("BookViewModel", "❌ Suche fehlgeschlagen: ${it.message}")
-
             }
         }
     }
 
     suspend fun searchBookByQuery(queryRaw: String): BookItem? {
-        Log.d("BookViewModel", "🔍 searchBookByQuery($queryRaw)")
         val q = queryRaw.trim()
         if (q.isEmpty()) return null
 
@@ -90,14 +179,12 @@ class BookViewModel : ViewModel() {
                     )
                 )
             )
-        } catch (e: Exception) {
-            Log.e("BookViewModel", "searchBookByQuery error: $e")
+        } catch (_: Exception) {
             null
         }
     }
 
     fun addManualRead(queryOrTitle: String, rating: Double, notes: String) {
-        Log.d("BookViewModel", "➕ addManualRead: $queryOrTitle, $rating★")
         viewModelScope.launch(Dispatchers.IO) {
             val found = searchBookByQuery(queryOrTitle)
 
@@ -110,9 +197,7 @@ class BookViewModel : ViewModel() {
                 )
             )
 
-            if (_readBooks.none { it.id == book.id }) {
-                _readBooks.add(0, book)
-            }
+            if (_readBooks.none { it.id == book.id }) _readBooks.add(0, book)
             _likedBooks.removeAll { it.id == book.id }
 
             val fb = FirestoreBook(
@@ -124,9 +209,7 @@ class BookViewModel : ViewModel() {
                 rating = rating,
                 notes = notes
             )
-            firebaseRepository.saveBook(fb) { ok ->
-                Log.d("BookViewModel", if (ok) "✅ Manual READ gespeichert" else "❌ Manual READ fehlgeschlagen")
-            }
+            firebaseRepository.saveBook(fb) { /* ignore */ }
         }
     }
 
@@ -146,40 +229,55 @@ class BookViewModel : ViewModel() {
             rating = rating,
             notes = notes
         )
-        firebaseRepository.saveBook(firestoreBook) { success ->
-            if (!success) Log.e("BookViewModel", "❌ READ+Notes speichern fehlgeschlagen")
-        }
+        firebaseRepository.saveBook(firestoreBook) { /* ignore */ }
     }
 
     fun likeBook(book: BookItem) {
-        if (_likedBooks.none { it.id == book.id }) {
-            _likedBooks.add(book)
-        }
+        if (_likedBooks.none { it.id == book.id }) _likedBooks.add(book)
         saveFavoriteToFirestore(book)
     }
 
     fun rateBook(book: BookItem, rating: Double) {
         _likedBooks.removeAll { it.id == book.id }
-        if (_readBooks.none { it.id == book.id }) {
-            _readBooks.add(book)
-        }
+        if (_readBooks.none { it.id == book.id }) _readBooks.add(book)
         saveReadToFirestore(book, rating)
     }
 
     fun markAsRead(book: BookItem) {
-        if (_readBooks.none { it.id == book.id }) {
-            _readBooks.add(book)
-        }
+        if (_readBooks.none { it.id == book.id }) _readBooks.add(book)
     }
 
+    /**
+     * Genres: Fantasy/Romance/YA (inkl. Romantasy/Dark Romance),
+     * Self-Help & Biographien werden weggefiltert.
+     * Dislike speichert NICHT – die UI ruft nur erneut `loadRandomBook()` auf.
+     */
     fun loadRandomBook() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _uiState.value = DataState.LOADING
-            val book = repository.getRandomBook()
-            if (book != null) {
-                _bookState.value = book
-                _uiState.value = DataState.READY
-            } else {
+
+            try {
+                ensurePool(minSize = 6)
+
+                val next = preloadPool.removeFirstOrNull()
+                if (next != null) {
+                    _bookState.value = next
+                    _uiState.value = DataState.READY
+                    return@launch
+                }
+
+                // Fallback auf bestehendes Repo (selten)
+                val fallback = repository.getRandomBook()
+                if (fallback != null && !isBlockedByTitle(fallback.volumeInfo?.title)) {
+                    val id = fallback.id ?: "fallback-${System.currentTimeMillis()}"
+                    if (id !in seenIds) seenIds.add(id)
+                    _bookState.value = fallback
+                    _uiState.value = DataState.READY
+                } else {
+                    _uiState.value = DataState.ERROR
+                }
+            } catch (e: Exception) {
+                Log.e("BookViewModel", "loadRandomBook failed: ${e.message}")
                 _uiState.value = DataState.ERROR
             }
         }
@@ -194,9 +292,7 @@ class BookViewModel : ViewModel() {
             status = "FAVORITE",
             rating = null
         )
-        firebaseRepository.saveBook(firestoreBook) { success ->
-            if (!success) Log.e("BookViewModel", "❌ Favorit konnte nicht gespeichert werden")
-        }
+        firebaseRepository.saveBook(firestoreBook) { /* ignore */ }
     }
 
     private fun saveReadToFirestore(book: BookItem, rating: Double) {
@@ -208,9 +304,7 @@ class BookViewModel : ViewModel() {
             status = "READ",
             rating = rating
         )
-        firebaseRepository.saveBook(firestoreBook) { success ->
-            if (!success) Log.e("BookViewModel", "❌ READ/Rating konnte nicht gespeichert werden")
-        }
+        firebaseRepository.saveBook(firestoreBook) { /* ignore */ }
     }
 
     fun deleteBookFromFirestore(bookId: String) {
@@ -246,16 +340,12 @@ class BookViewModel : ViewModel() {
         )
     }
 
-
     fun updateNotes(bookId: String, notes: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            // 1) Falls bereits Metadaten vorhanden sind: nur Notes ersetzen
             val current = getMetaFor(bookId)
             if (current != null) {
                 val updated = current.copy(notes = notes)
-                firebaseRepository.saveBook(updated) { success ->
-                    if (!success) Log.e("BookViewModel", "❌ updateNotes: Speichern fehlgeschlagen")
-                }
+                firebaseRepository.saveBook(updated) { /* ignore */ }
                 return@launch
             }
 
@@ -270,12 +360,10 @@ class BookViewModel : ViewModel() {
                     author = localBook.volumeInfo.authors?.joinToString(", ") ?: "",
                     coverUrl = localBook.volumeInfo.imageLinks?.thumbnail ?: "",
                     status = "READ",
-                    rating = getMetaFor(bookId)?.rating, // falls doch irgendwo vorhanden
+                    rating = getMetaFor(bookId)?.rating,
                     notes = notes
                 )
-                firebaseRepository.saveBook(fb) { success ->
-                    if (!success) Log.e("BookViewModel", "❌ updateNotes: Neu anlegen fehlgeschlagen")
-                }
+                firebaseRepository.saveBook(fb) { /* ignore */ }
                 return@launch
             }
 
@@ -288,9 +376,7 @@ class BookViewModel : ViewModel() {
                 rating = null,
                 notes = notes
             )
-            firebaseRepository.saveBook(minimal) { success ->
-                if (!success) Log.e("BookViewModel", "❌ updateNotes: Minimal anlegen fehlgeschlagen")
-            }
+            firebaseRepository.saveBook(minimal) { /* ignore */ }
         }
     }
 }

@@ -1,37 +1,54 @@
-package com.example.bookfusion.ui.screens
+package com.example.bookfusion.ui.screens.moodboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bookfusion.model.MoodboardEntry
+import com.example.bookfusion.ui.screens.moodboard.components.EmptyState
+import com.example.bookfusion.ui.screens.moodboard.components.MoodboardLibraryCard
 import com.example.bookfusion.viewmodel.MoodboardViewModel
 import kotlinx.coroutines.flow.StateFlow
-import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 
+/**
+ * **MoodBoardScreen**
+ *
+ * Diese Ansicht zeigt die **Übersicht aller Moodboards** eines Nutzers.
+ *
+ * Features:
+ * - 📚 Anzeige aller Bücher, für die es Moodboard-Einträge gibt
+ * - 🖼 Klick auf eine Karte öffnet die Detailansicht des Moodboards
+ * - 🗑 Löschen eines Moodboards mit Sicherheitsabfrage (AlertDialog)
+ * - ➕ Falls keine Moodboards existieren, wird ein **Empty State** mit Hinweistext angezeigt
+ * - 🎨 Hintergrund mit sanftem Farbverlauf (Gradient)
+ *
+ * @param entriesFlow Ein Flow mit allen gespeicherten Moodboard-Einträgen
+ * @param onOpenMoodboard Callback, wenn der Nutzer ein bestimmtes Moodboard öffnen möchte
+ * @param modifier Optionaler Modifier (z. B. für Padding)
+ * @param moodboardVM ViewModel, das Moodboard-Operationen (z. B. Löschen) ausführt
+ * @param onBack Callback für die Zurück-Navigation
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoodBoardScreen(
     entriesFlow: StateFlow<List<MoodboardEntry>>,
     onOpenMoodboard: (bookId: String, title: String) -> Unit,
     modifier: Modifier = Modifier,
-    moodboardVM: MoodboardViewModel = viewModel()
+    moodboardVM: MoodboardViewModel = viewModel(),
+    onBack: () -> Unit = {}
 ) {
     val entries by entriesFlow.collectAsState()
 
@@ -43,7 +60,19 @@ fun MoodBoardScreen(
     var pending by remember { mutableStateOf<MoodboardEntry?>(null) }
 
     Scaffold(
-        topBar = { CenterAlignedTopAppBar(title = { Text("Moodboard") }) },
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Moodboard") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Zurück"
+                        )
+                    }
+                }
+            )
+        },
         snackbarHost = { SnackbarHost(snackbar) }
     ) { inner ->
         Box(
@@ -56,7 +85,9 @@ fun MoodBoardScreen(
                 EmptyState(
                     title = "Noch nichts hier …",
                     subtitle = "Füge Bücher aus deinem Journal hinzu, um Moodboards zu bauen.",
-                    modifier = Modifier.align(Alignment.Center).padding(horizontal = 24.dp)
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(horizontal = 24.dp)
                 )
             } else {
                 LazyVerticalGrid(
@@ -80,8 +111,7 @@ fun MoodBoardScreen(
         }
     }
 
-    if (pending != null) {
-        val del = pending!!
+    pending?.let { del ->
         AlertDialog(
             onDismissRequest = { pending = null },
             title = { Text("Buch löschen?") },
@@ -90,76 +120,11 @@ fun MoodBoardScreen(
             confirmButton = {
                 TextButton(onClick = {
                     pending = null
-                    moodboardVM.deleteEntry(del.bookId)   // <-- statt deleteBook(...)
+                    moodboardVM.deleteEntry(del.bookId)
                     scope.launch { snackbar.showSnackbar("„${del.title}“ gelöscht") }
                 }) { Text("Löschen") }
             },
             dismissButton = { TextButton(onClick = { pending = null }) { Text("Abbrechen") } }
         )
-    }
-}
-
-@Composable
-private fun MoodboardLibraryCard(
-    title: String,
-    coverUrl: String,
-    count: Int,
-    onOpen: () -> Unit,
-    onDelete: () -> Unit
-) {
-    var menuOpen by remember { mutableStateOf(false) }
-    ElevatedCard(
-        onClick = onOpen,
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = Color(0xFFFFF7FE)),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 5.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(Modifier.padding(12.dp)) {
-            Box {
-                AsyncImage(
-                    model = coverUrl.ifBlank { null },
-                    contentDescription = title,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(3f / 4f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFFEAE6FF))
-                )
-                Box(modifier = Modifier.align(Alignment.TopEnd).padding(6.dp)) {
-                    IconButton(onClick = { menuOpen = true }) {
-                        Icon(Icons.Filled.MoreVert, contentDescription = "Mehr")
-                    }
-                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                        DropdownMenuItem(
-                            text = { Text("Löschen") },
-                            leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
-                            onClick = { menuOpen = false; onDelete() }
-                        )
-                    }
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-            Text(text = title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            if (count > 0) {
-                Spacer(Modifier.height(8.dp))
-                AssistChip(onClick = onOpen, label = { Text("$count Foto${if (count == 1) "" else "s"}") })
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmptyState(title: String, subtitle: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Box(
-            modifier = Modifier.size(96.dp).clip(RoundedCornerShape(28.dp)).background(Color(0xFFEAE6FF))
-        )
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

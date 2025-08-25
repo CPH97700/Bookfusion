@@ -23,7 +23,25 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-
+/**
+ * Ein runder Button mit Icon in der Mitte.
+ *
+ * Features:
+ * - Farbiger Ring außen (Gradient)
+ * - Hintergrundfarbe innen
+ * - Optionaler Rand
+ * - Drück-Animation (Button wird kurz kleiner)
+ *
+ * @param icon Das Icon, das in der Mitte angezeigt wird
+ * @param contentDescription Text für Screenreader
+ * @param ring Farben für den äußeren Ring (Gradient)
+ * @param iconTint Farbe des Icons
+ * @param background Hintergrundfarbe des Buttons
+ * @param borderColor Optionaler Rand (Standard: transparent)
+ * @param iconSize Größe des Icons (Standard: 26.dp)
+ * @param buttonSize Gesamtgröße des Buttons (Standard: 70.dp)
+ * @param onClick Aktion, die beim Klicken ausgeführt wird
+ */
 @Composable
 fun ActionButton(
     icon: ImageVector,
@@ -32,8 +50,8 @@ fun ActionButton(
     iconTint: Color,
     background: Color,
     borderColor: Color = Color.Transparent,
-    iconSize: Dp = 26.dp,     // <- NEU
-    buttonSize: Dp = 70.dp,   // <- NEU
+    iconSize: Dp = 26.dp,
+    buttonSize: Dp = 70.dp,
     onClick: () -> Unit
 ) {
     val interaction = remember { MutableInteractionSource() }
@@ -63,7 +81,7 @@ fun ActionButton(
                         color = borderColor,
                         shape = CircleShape
                     )
-                    .padding(buttonSize * 0.20f) // proportionaler Innenabstand
+                    .padding(buttonSize * 0.20f)
                     .graphicsLayer {
                         scaleX = scale
                         scaleY = scale

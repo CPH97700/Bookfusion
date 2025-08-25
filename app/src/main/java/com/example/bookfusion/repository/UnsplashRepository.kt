@@ -4,6 +4,12 @@ import com.example.bookfusion.data.remote.UnsplashApi
 import com.example.bookfusion.data.remote.UnsplashApiService
 import com.example.bookfusion.model.UnsplashSearchResponse
 
+/**
+ * Repository für die Unsplash API.
+ *
+ * Hierüber hole ich Bilder von Unsplash,
+ * z. B. um ein Moodboard zu füllen.
+ */
 class UnsplashRepository(
     private val api: UnsplashApiService = UnsplashApi.service
 ) {

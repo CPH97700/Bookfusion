@@ -9,7 +9,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-
+/**
+ * Repräsentiert den aktuellen Zustand der Unsplash-Suche im UI.
+ * - [isLoading]: zeigt an, ob gerade gesucht wird.
+ * - [error]: Fehlermeldung, falls die Suche fehlschlägt.
+ * - [photos]: Liste der gefundenen Fotos.
+ * - [query]: Der aktuelle Suchbegriff.
+ */
 data class UnsplashUiState(
     val isLoading: Boolean = false,
     val error: String? = null,

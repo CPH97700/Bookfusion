@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/bookfusion/viewmodel/MoodboardViewModel.kt
 package com.example.bookfusion.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -10,6 +9,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+/**
+ * **MoodboardViewModel**
+ *
+ * Steuert die Moodboard-Daten im UI:
+ * - Hört auf Änderungen im Repository (live Updates aus Firestore).
+ * - Kann Bücher hinzufügen, wenn noch kein Moodboard dafür existiert.
+ * - Kann Fotos (Unsplash) zu einem Moodboard hinzufügen oder entfernen.
+ * - Kann ganze Moodboards löschen.
+ *
+ * Nutzt [MoodboardRepository] für alle Datenoperationen.
+ */
 class MoodboardViewModel(
     private val repo: MoodboardRepository = MoodboardRepository()
 ) : ViewModel() {

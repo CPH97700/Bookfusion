@@ -1,4 +1,4 @@
-package com.example.bookfusion.ui.components
+package com.example.bookfusion.ui.screens.journal.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -8,6 +8,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.bookapp.model.BookItem
 
+/**
+ * BottomSheet zum Bewerten eines Buches.
+ *
+ * - Zeigt den Titel des Buches an
+ * - Ermöglicht über einen Slider eine Bewertung von 0 bis 5 Sternen (in 0.5-Schritten)
+ * - Anzeige der aktuellen Bewertung
+ * - Buttons zum Löschen, Schließen oder Speichern der Bewertung
+ *
+ * @param book Das Buch, das bewertet werden soll
+ * @param onClose Aktion beim Schließen ohne Speichern
+ * @param onConfirm Aktion beim Speichern der Bewertung (liefert das Rating als Double)
+ * @param onDelete Aktion zum Löschen der Bewertung (optional)
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookRatingSheet(
@@ -17,7 +30,7 @@ fun BookRatingSheet(
     onDelete: () -> Unit = {}
 ) {
     ModalBottomSheet(onDismissRequest = onClose) {
-        var rating by remember { mutableStateOf(3.0f) } // Default 3.0
+        var rating by remember { mutableStateOf(3.0f) }
 
         Column(
             modifier = Modifier.padding(16.dp),

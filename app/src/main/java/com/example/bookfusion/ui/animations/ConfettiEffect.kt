@@ -14,6 +14,12 @@ import nl.dionsegijn.konfetti.core.Rotation
 import nl.dionsegijn.konfetti.core.emitter.Emitter
 import java.util.concurrent.TimeUnit
 
+/**
+ * Ein Konfetti-Effekt für besondere Momente (z. B. Erfolg, Achievement).
+ *
+ * @param show ob der Effekt gerade abgespielt werden soll
+ * @param onFinished Callback, wenn der Effekt nach ein paar Sekunden beendet ist
+ */
 @Composable
 fun ConfettiEffect(
     show: Boolean,

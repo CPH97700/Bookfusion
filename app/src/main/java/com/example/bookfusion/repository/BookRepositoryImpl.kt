@@ -5,6 +5,9 @@ import com.example.bookapp.data.repository.BookRepository
 import com.example.bookapp.model.BookItem
 import com.example.bookfusion.data.remote.BookApi
 
+/**
+ * Umsetzung vom [BookRepository], die die Google Books API benutzt.
+ */
 class BookRepositoryImpl : BookRepository {
 
     private val api = BookApi.retrofitService

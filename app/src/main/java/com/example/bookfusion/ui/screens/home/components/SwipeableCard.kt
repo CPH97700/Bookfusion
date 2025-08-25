@@ -1,4 +1,4 @@
-package com.example.bookfusion.ui.components
+package com.example.bookfusion.ui.screens.home.components
 
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
@@ -7,7 +7,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import kotlin.math.roundToInt
@@ -15,6 +14,18 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 
+/**
+ * Eine Karte, die man seitlich wegwischen (swipen) kann.
+ *
+ * Die Karte bewegt sich mit dem Finger, dreht sich leicht
+ * und wird kleiner. Wenn der Swipe weit genug geht,
+ * wird [onSwiped] ausgelöst.
+ *
+ * @param modifier Modifikatoren für die Karte
+ * @param onSwiped Aktion, die ausgeführt wird, wenn die Karte
+ *                 weit genug geswiped wurde
+ * @param content Inhalt, der in der Karte angezeigt wird
+ */
 @Composable
 fun SwipeableCard(
     modifier: Modifier = Modifier,
@@ -49,3 +60,10 @@ fun SwipeableCard(
         content()
     }
 }
+
+
+
+
+
+
+

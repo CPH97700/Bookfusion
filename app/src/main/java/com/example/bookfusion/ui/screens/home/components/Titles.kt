@@ -24,6 +24,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
 
+/**
+ * Zeigt einen Text mit einem Farbverlauf (Gradient) an.
+ *
+ * @param text Der anzuzeigende Text
+ * @param gradient Farbverlauf, der über den Text gelegt wird
+ * @param letterSpacing Abstand zwischen den Buchstaben (Standard: 0)
+ * @param fontSize Schriftgröße (Standard: 32sp)
+ */
 @Composable
 fun GradientTitle(
     text: String,

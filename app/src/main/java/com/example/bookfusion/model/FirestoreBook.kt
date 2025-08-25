@@ -3,7 +3,18 @@ package com.example.bookfusion.model
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
-
+/**
+ * Ein Buch, das ich in Firestore speichere.
+ *
+ * @param id die Buch-ID
+ * @param title der Titel des Buches
+ * @param author der Autor oder die Autorin
+ * @param coverUrl Link zum Coverbild
+ * @param status z. B. FAVORITE oder READ
+ * @param rating meine Bewertung (kann leer sein)
+ * @param updatedAt Zeitstempel der letzten Änderung
+ * @param notes eigene Notizen zum Buch
+ */
 data class FirestoreBook(
     val id: String = "",
     val title: String = "",
@@ -15,6 +26,11 @@ data class FirestoreBook(
     val notes: String? = null
 )
 
+/**
+ * Ein Eintrag für ein Moodboard in Firestore.
+ *
+ * Enthält ein Buch mit mehreren Fotos von Unsplash.
+ */
 data class FirestoreMoodboardEntry(
     val bookId: String = "",
     val title: String = "",
@@ -22,6 +38,9 @@ data class FirestoreMoodboardEntry(
     val photos: List<FirestoreUnsplashPhoto> = emptyList()
 )
 
+/**
+ * Ein einzelnes Unsplash-Foto, wie es in Firestore gespeichert wird.
+ */
 data class FirestoreUnsplashPhoto(
     val id: String = "",
     val smallUrl: String = "",
@@ -29,7 +48,11 @@ data class FirestoreUnsplashPhoto(
     val alt: String = ""
 )
 
-
+/**
+ * Moodboard-Eintrag in der App (nicht in Firestore).
+ *
+ * Nutzt direkt die [UnsplashPhoto]-Klasse.
+ */
 data class MoodboardEntry(
     val bookId: String,
     val title: String,
@@ -37,7 +60,13 @@ data class MoodboardEntry(
     val photos: List<UnsplashPhoto> = emptyList()
 )
 
-
+/**
+ * Antwort der Unsplash-Suche.
+ *
+ * @param total Gesamtanzahl der Treffer
+ * @param totalPages wie viele Seiten Ergebnisse es gibt
+ * @param results Liste der gefundenen Fotos
+ */
 @JsonClass(generateAdapter = true)
 data class UnsplashSearchResponse(
     val total: Int = 0,
@@ -45,6 +74,14 @@ data class UnsplashSearchResponse(
     val results: List<UnsplashPhoto> = emptyList()
 )
 
+/**
+ * Ein Foto von Unsplash.
+ *
+ * @param id die ID des Fotos
+ * @param description optionale Beschreibung
+ * @param alt_description Alternativtext
+ * @param urls verschiedene Bildgrößen
+ */
 @JsonClass(generateAdapter = true)
 data class UnsplashPhoto(
     val id: String = "",
@@ -53,6 +90,9 @@ data class UnsplashPhoto(
     val urls: UnsplashUrls = UnsplashUrls()
 )
 
+/**
+ * Verschiedene Größen/Links für ein Unsplash-Foto.
+ */
 @JsonClass(generateAdapter = true)
 data class UnsplashUrls(
     val raw: String = "",
@@ -62,7 +102,9 @@ data class UnsplashUrls(
     val thumb: String = ""
 )
 
-
+/**
+ * Wandelt einen Firestore-Moodboard-Eintrag in ein normales Moodboard um.
+ */
 fun FirestoreMoodboardEntry.toMoodboardEntry(): MoodboardEntry =
     MoodboardEntry(
         bookId = bookId,
@@ -83,6 +125,9 @@ fun FirestoreMoodboardEntry.toMoodboardEntry(): MoodboardEntry =
         }
     )
 
+/**
+ * Wandelt ein Moodboard in das Firestore-Format um.
+ */
 fun MoodboardEntry.toFirestore(): FirestoreMoodboardEntry =
     FirestoreMoodboardEntry(
         bookId = bookId,

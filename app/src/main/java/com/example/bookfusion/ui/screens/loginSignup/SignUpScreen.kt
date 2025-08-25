@@ -1,16 +1,25 @@
+// app/src/main/java/com/example/bookfusion/screens/SignupScreen.kt
 package com.example.bookfusion.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -21,17 +30,35 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.bookfusion.viewmodel.AuthViewModel
 
+/**
+ * **SignupScreen** – Registrierung eines neuen Nutzers.
+ *
+ * Features:
+ * - 🎨 moderner Hintergrund mit Farbverlauf
+ * - ✉️ Eingabefeld für **E-Mail**
+ * - 🔑 Eingabefeld für **Passwort** mit Umschalten sichtbar/unsichtbar
+ * - ✅ Button zum Registrieren (ruft `AuthViewModel.register()` auf)
+ * - ➡️ Bei Erfolg: Navigation zur Startseite (`home`)
+ * - 📌 Link zurück zum Login, falls bereits ein Konto existiert
+ *
+ * @param navController Navigation zum Wechseln zwischen Screens (Login/Home)
+ * @param viewModel Zuständig für die Registrierung (Firebase)
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignupScreen(
     navController: NavController,
     viewModel: AuthViewModel
 ) {
-    var profileName by remember { mutableStateOf("") }
+    var profileName by remember { mutableStateOf("") } // optional, Logik bleibt unverändert
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var errorText by remember { mutableStateOf("") }
+
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showSheet by remember { mutableStateOf(true) }
 
     Box(
         modifier = Modifier
@@ -42,6 +69,7 @@ fun SignupScreen(
                 )
             )
     ) {
+        // Header im Hintergrund, wie beim Login
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -49,38 +77,35 @@ fun SignupScreen(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             Spacer(modifier = Modifier.height(60.dp))
-
             Text(
                 text = "Sign up. Lege ein Konto an",
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF6A4EA6)
             )
+        }
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(8.dp)
+        // Bottom Sheet statt Card
+        if (showSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showSheet = false },
+                sheetState = sheetState,
+                containerColor = Color.White,
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(24.dp)
                         .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .width(40.dp)
-                            .height(4.dp)
-                            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(2.dp))
-                            .align(Alignment.CenterHorizontally)
+                    Text(
+                        "Registrieren",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
                     )
-
-                    Spacer(modifier = Modifier.height(24.dp))
 
                     OutlinedTextField(
                         value = profileName,
@@ -91,7 +116,6 @@ fun SignupScreen(
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
-
 
                     OutlinedTextField(
                         value = email,
@@ -113,7 +137,7 @@ fun SignupScreen(
                         trailingIcon = {
                             IconButton(onClick = { showPassword = !showPassword }) {
                                 Icon(
-                                    imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    imageVector = if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                     contentDescription = "Passwort anzeigen"
                                 )
                             }
@@ -132,14 +156,9 @@ fun SignupScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-
                     if (errorText.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = errorText,
-                            color = Color.Red,
-                            fontSize = 14.sp
-                        )
+                        Text(text = errorText, color = Color.Red, fontSize = 14.sp)
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
@@ -169,17 +188,19 @@ fun SignupScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
+                                .clip(RoundedCornerShape(12.dp))
                                 .background(
                                     brush = Brush.horizontalGradient(
                                         listOf(Color(0xFFB18DD6), Color(0xFFE4C1F9))
-                                    ),
-                                    shape = RoundedCornerShape(12.dp)
+                                    )
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
                             Text("Sign Up", color = Color(0xFF3E2F6D), fontWeight = FontWeight.SemiBold)
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
         }

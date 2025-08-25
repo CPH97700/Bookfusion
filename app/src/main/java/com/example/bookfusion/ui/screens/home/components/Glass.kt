@@ -31,7 +31,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-
+/**
+ * Eine Karte mit Glas-Effekt (halb transparent, mit Glanz).
+ *
+ * @param content Inhalt, der in die Karte eingesetzt wird.
+ */
 @Composable
 fun GlassCard(content: @Composable BoxScope.() -> Unit) {
     Box(

@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/bookfusion/repository/FirebaseRepository.kt
 package com.example.bookfusion.repository
 
 import android.util.Log
@@ -11,6 +10,13 @@ import com.google.firebase.firestore.ktx.toObjects
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
+/**
+ * Repository für Firebase Auth und Firestore.
+ *
+ * - kümmert sich um Login, Logout, Registrierung
+ * - merkt sich den aktuellen Nutzer
+ * - lädt, speichert und löscht Bücher in Firestore
+ */
 class FirebaseRepository {
 
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()

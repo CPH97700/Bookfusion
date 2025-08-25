@@ -1,4 +1,4 @@
-package com.example.bookfusion.ui.screens
+package com.example.bookfusion.ui.screens.loginSignup
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -30,7 +30,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 
-
+/**
+ * **StartScreen** – Erster Screen beim Öffnen der App.
+ *
+ * Features:
+ * - 🎨 Hintergrund mit Farbverlauf (lila → rosa)
+ * - 👆 Wischen nach oben (Swipe/Drag) führt automatisch zur Login-Seite
+ * - 📚 Text mit Hinweis „BookFusion wartet – wisch nach oben“
+ * - ⬆️ Mehrere animierte Pfeile nach oben zur visuellen Unterstützung
+ *
+ * @param navController Navigation, um nach dem Wischen zur Login-Seite zu wechseln
+ */
 @Composable
 fun StartScreen(navController: NavController) {
     var offsetY by remember { mutableStateOf(0f) }

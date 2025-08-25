@@ -17,6 +17,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
+/**
+ * Ein animierter Hintergrund mit kleinen "Glitzerpunkten".
+ *
+ * - Zeichnet mehrere helle Punkte auf einem Canvas.
+ * - Punkte bewegen sich sanft (drift).
+ * - Sorgt für einen subtilen, magischen Look im Hintergrund.
+ */
 @Composable
 fun SparkleBackdrop() {
     val dots = 16

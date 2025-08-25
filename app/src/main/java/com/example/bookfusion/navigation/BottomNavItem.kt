@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/bookfusion/navigation/BottomNavItem.kt
 package com.example.bookfusion.navigation
 
 import androidx.compose.material.icons.Icons
@@ -8,6 +7,14 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 
+/**
+ * Beschreibt die einzelnen Tabs in der BottomNavigationBar.
+ *
+ * Jeder Eintrag hat:
+ * - eine Route (zum Navigieren),
+ * - ein Label (Text unten drunter),
+ * - und ein Icon.
+ */
 sealed class BottomNavItem(
     val route: String,
     val label: String,

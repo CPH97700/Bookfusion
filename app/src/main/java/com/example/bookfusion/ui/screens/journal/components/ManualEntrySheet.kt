@@ -1,4 +1,4 @@
-package com.example.bookfusion.ui.components
+package com.example.bookfusion.ui.screens.journal.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +18,19 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/**
+ * Ein BottomSheet, mit dem Nutzer ein Buch manuell ins Journal eintragen können.
+ *
+ * Ablauf:
+ * - Nutzer gibt Titel oder ISBN in ein Suchfeld ein
+ * - Ergebnisse von der Google Books API werden angezeigt
+ * - Nutzer wählt ein Buch aus
+ * - Danach können Bewertung und Notizen hinzugefügt werden
+ * - Mit Klick auf den Button wird das Buch in Firestore als gelesen gespeichert
+ *
+ * @param viewModel Zugriff auf [BookViewModel], um Bücher zu suchen und zu speichern
+ * @param onClose Aktion beim Schließen des Sheets
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManualEntrySheet(

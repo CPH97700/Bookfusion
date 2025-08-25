@@ -25,6 +25,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.min
 
+/**
+ * Zeigt einen animierten "Glow-Kreis" (Aura), der pulsiert.
+ *
+ * @param auraSize Größe der Aura
+ * @param color Farbe der Aura
+ */
 @Composable
 fun GlowAura(auraSize: Dp, color: Color) {
     val transition = rememberInfiniteTransition(label = "glow")
