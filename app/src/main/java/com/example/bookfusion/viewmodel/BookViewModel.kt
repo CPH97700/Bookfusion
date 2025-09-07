@@ -66,7 +66,6 @@ class BookViewModel : ViewModel() {
     private val _searchResults = MutableStateFlow<List<BookItem>>(emptyList())
     val searchResults: StateFlow<List<BookItem>> = _searchResults
 
-    // --------------------- Pool + Genre-Filter ---------------------
 
     private val preloadPool = ArrayDeque<BookItem>()
 
@@ -137,7 +136,6 @@ class BookViewModel : ViewModel() {
         }
     }
 
-    // ---------------------------------------------------------------------------
 
     fun searchBooksByQuery(queryRaw: String) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -266,7 +264,6 @@ class BookViewModel : ViewModel() {
                     return@launch
                 }
 
-                // Fallback auf bestehendes Repo (selten)
                 val fallback = repository.getRandomBook()
                 if (fallback != null && !isBlockedByTitle(fallback.volumeInfo?.title)) {
                     val id = fallback.id ?: "fallback-${System.currentTimeMillis()}"
